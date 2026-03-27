@@ -1,0 +1,86 @@
+<resources>
+
+    <string name="app_name">BRUNCH BAR SLANJE NARUDŽBI</string>
+
+    <!-- LOGIN -->
+    <string name="login_title">BRUNCH BAR</string>
+    <string name="login_subtitle">DOBRODOŠLI U APLIKACIJU ZA ONLINE NARUČIVANJE NARUDŽBI</string>
+    <string name="login_scan_button">SKENIRANJE QR KODA</string>
+
+    <!-- QR SCANNER -->
+    <string name="qr_invalid">MOLIMO SKENIRAJTE ISPRAVAN QR KOD</string>
+    <string name="qr_retry">KLIKNITE ZA PONOVNI POKUŠAJ</string>
+    <string name="qr_continue">KLIKNITE ZA DALJE</string>
+    <string name="qr_welcome">DOBRODOŠLI ZA STOL %1$d</string>
+    <string name="qr_scan_instruction">SKENIRAJTE QR KOD NA STOLU</string>
+    <string name="qr_loading">PROVJERA QR KODA...</string>
+
+    <!-- PREVIEW (za XML jer ne može %d bez runtime-a) -->
+    <string name="qr_welcome_preview">DOBRODOŠLI ZA STOL </string>
+
+    <!-- ACCESSIBILITY -->
+    <string name="coffee_icon_desc">Ikona kave</string>
+    <string name="success_icon_desc">Ikona uspješnog skeniranja</string>
+    <string name="error_icon_desc">Ikona neuspješnog skeniranja</string>
+
+    <!-- MENU / ORDER -->
+    <string name="menu_food">HRANA</string>
+    <string name="menu_drinks">PIĆE</string>
+    <string name="table_number">STOL %1$d</string>
+    <string name="table_number_placeholder">STOL</string>
+    <string name="selected_items_count">ODABRANO ARTIKALA: %1$d</string>
+    <string name="selected_items_zero">ODABRANO ARTIKALA: 0</string>
+    <string name="cancel_order">PONIŠTI NARUDŽBU</string>
+    <string name="finish_order">ZAVRŠI NARUDŽBU</string>
+    <string name="favorites">Favoriti</string>
+    <string name="ai_chat">AI Chat</string>
+    <string name="menu_load_error">Greška prilikom dohvaćanja menija.</string>
+    <string name="favorites_empty">Nema favoriziranih artikala.</string>
+    <string name="favorites_load_error">Greška prilikom dohvaćanja favorita.</string>
+    <string name="modifications_load_error">Greška prilikom dohvaćanja modifikacija.</string>
+
+    <!-- MENU ITEM PREVIEW -->
+    <string name="menu_item_name_preview">PIZZA MARGHERITA</string>
+    <string name="menu_item_price_preview">8.50€</string>
+
+    <!-- CHAT -->
+    <string name="chat_welcome">Bok! Pitaj me što god te zanima.</string>
+    <string name="chat_no_response">Nema odgovora od AI.</string>
+    <string name="chat_error_functions">Greška funkcije: %1$s\nporuka: %2$s\ndetalji: %3$s</string>
+    <string name="chat_error_generic">Greška: %1$s</string>
+    <string name="chat_null">null</string>
+
+    <!-- CHAT INPUT -->
+    <string name="chat_hint">Napiši poruku...</string>
+    <string name="chat_send">Pošalji</string>
+
+    <!-- MODIFIKACIJE -->
+    <string name="modifications_title_preview">Naziv pića</string>
+    <string name="modifications_select">ODABERITE MODIFIKACIJE</string>
+    <string name="quantity_label">KOLIČINA</string>
+    <string name="quantity_default">1</string>
+    <string name="note_hint">Dodajte napomenu (opcionalno)</string>
+    <string name="add_to_order">DODAJ U NARUDŽBU</string>
+    <string name="minus_symbol">-</string>
+    <string name="plus_symbol">+</string>
+    <string name="modifications_image_desc">Slika artikla</string>
+    <string name="order_modifications_prefix">: </string>
+    <string name="order_quantity_format"> (X%1$d)</string>
+    <string name="order_note_prefix">\n\nNAPOMENA: </string>
+
+    <!-- PREGLED NARUDZBI -->
+    <string name="send_order">POŠALJI NARUDŽBU</string>
+    <string name="order_item_deleted">STAVKA OBRISANA</string>
+    <string name="restore_product">VRATI PROIZVOD</string>
+    <string name="add_item_first">DODAJ STAVKU!</string>
+    <string name="table_number_missing_error">Greška: Broj stola nije ispravno proslijeđen!</string>
+    <string name="order_send_error">Greška prilikom slanja narudžbe!</string>
+    <string name="counter_update_error">Greška prilikom ažuriranja brojača!</string>
+    <string name="order_status_received">pristigla</string>
+    <string name="order_quantity_extract_error">Greška prilikom izdvajanja količine iz narudžbe: %1$s</string>
+
+    <!-- MOJE NARUDZBE -->
+    <string name="order_deleted_success">Narudžba obrisana!</string>
+    <string name="order_delete_error">Greška pri brisanju narudžbe!</string>
+
+</resources>

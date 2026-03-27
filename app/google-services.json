@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "391196774245",
+    "firebase_url": "https://caffe-bar-lav-31c84-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "caffe-bar-lav-31c84",
+    "storage_bucket": "caffe-bar-lav-31c84.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:391196774245:android:ab9c1d379a58243de2db8c",
+        "android_client_info": {
+          "package_name": "com.example.lav_digitalizacija"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDFGarEiOXWlDApDf3UeYB2TPxF61VxB2U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
