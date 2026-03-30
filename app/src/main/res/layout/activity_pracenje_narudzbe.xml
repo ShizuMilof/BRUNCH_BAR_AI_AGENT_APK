@@ -79,7 +79,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Promijeni status"
+            android:text="Promijeni status, ovo je trenutno tu samo kako bi izsimulirali admin dio"
             android:textColor="@color/black"
             android:backgroundTint="@color/white" />
 
