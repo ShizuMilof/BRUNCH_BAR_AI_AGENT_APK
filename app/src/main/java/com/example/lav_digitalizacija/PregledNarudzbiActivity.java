@@ -123,28 +123,19 @@ public class PregledNarudzbiActivity extends AppCompatActivity {
         btnPosaljiNarudzbu.setOnClickListener(v -> {
             if (!narudzbeList.isEmpty()) {
                 btnPosaljiNarudzbu.setEnabled(false);
-
-                posaljiNarudzbuFirebase(() -> {
-                    totalSelected = 0;
-                    updateResult();
-
-                    preferences.edit().remove("narudzbe").apply();
-                    narudzbeList.clear();
-                    narudzbaAdapter.notifyDataSetChanged();
-
-                    finish();
-                });
+                posaljiNarudzbuFirebase();
             } else {
                 Toast.makeText(this, R.string.add_item_first, Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    private void posaljiNarudzbuFirebase(Runnable onSuccess) {
+    private void posaljiNarudzbuFirebase() {
         DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
         DatabaseReference narudzbeRef = databaseRef.child("narudzbe");
         DatabaseReference counterRef = databaseRef.child("SVEUKUPNO_IZDANO_NARUDZBI");
-
+        String restaurant = getIntent().getStringExtra("restaurant");
+        String qrToken = getIntent().getStringExtra("qrToken");
         counterRef.runTransaction(new Transaction.Handler() {
             @NonNull
             @Override
@@ -181,17 +172,41 @@ public class PregledNarudzbiActivity extends AppCompatActivity {
 
                     Map<String, Object> narudzba = new HashMap<>();
                     narudzba.put("stavke", narudzbeList);
-                    narudzba.put(
-                            "vrijeme",
-                            new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date())
-                    );
+                    narudzba.put("vrijeme",
+                            new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date()));
                     narudzba.put("konobar", konobar);
                     narudzba.put("brojStola", tableNumber);
-                    narudzba.put("status", getString(R.string.order_status_received));
+                    narudzba.put("restaurant", restaurant);
+                    narudzba.put("qrToken", qrToken);
+                    narudzba.put("status", "Narudžba zaprimljena");
+                    narudzba.put("korak", 1);
+                    narudzba.put("ukupnoKoraka", 4);
+                    narudzba.put("napomenaZaGosta", "Kuhinja je zaprimila vašu narudžbu");
+                    narudzba.put("lastUpdated", System.currentTimeMillis());
 
                     narudzbeRef.child(noviKljuc).setValue(narudzba).addOnCompleteListener(spremanjeTask -> {
                         if (spremanjeTask.isSuccessful()) {
-                            onSuccess.run();
+
+                            SharedPreferences preferences = getSharedPreferences("narudzba", Context.MODE_PRIVATE);
+
+                            totalSelected = 0;
+                            updateResult();
+
+                            ArrayList<String> poslaneStavke = new ArrayList<>(narudzbeList);
+
+                            preferences.edit().remove("narudzbe").apply();
+                            narudzbeList.clear();
+                            narudzbaAdapter.notifyDataSetChanged();
+
+                            Intent intent = new Intent(PregledNarudzbiActivity.this, PotvrdaNarudzbeActivity.class);
+                            intent.putStringArrayListExtra("stavkeNarudzbe", poslaneStavke);
+                            intent.putExtra("narudzbaId", noviKljuc);
+                            intent.putExtra("tableNumber", tableNumber);
+                            intent.putExtra("restaurant", restaurant);
+                            intent.putExtra("qrToken", qrToken);
+                            startActivity(intent);
+
+                            finish();
                         } else {
                             btnPosaljiNarudzbu.setEnabled(true);
                             Toast.makeText(
@@ -209,6 +224,8 @@ public class PregledNarudzbiActivity extends AppCompatActivity {
                             Toast.LENGTH_SHORT
                     ).show();
                 }
+
+
             }
         });
     }

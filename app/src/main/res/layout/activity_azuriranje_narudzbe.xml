@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:id="@+id/txtNarudzbaId"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Upravljanje narudžbom"
+            android:textColor="@android:color/white"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnZaprimljeno"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Narudžba zaprimljena"
+            android:textColor="@color/black"
+            android:backgroundTint="@color/white" />
+
+        <Button
+            android:id="@+id/btnIzrada"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Krenulo u izradu"
+            android:textColor="@color/black"
+            android:backgroundTint="@color/white" />
+
+        <Button
+            android:id="@+id/btnPriprema"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Priprema se"
+            android:textColor="@color/black"
+            android:backgroundTint="@color/white" />
+
+        <Button
+            android:id="@+id/btnStize"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Uskoro stiže na vaš stol"
+            android:textColor="@color/black"
+            android:backgroundTint="@color/white" />
+
+        <Button
+            android:id="@+id/btnDostavljeno"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Dostavljeno"
+            android:textColor="@color/black"
+            android:backgroundTint="@color/white" />
+
+    </LinearLayout>
+</ScrollView>

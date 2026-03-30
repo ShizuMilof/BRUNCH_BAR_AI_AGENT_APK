@@ -127,12 +127,13 @@
                 android:contentDescription="@string/ai_chat" />
 
             <ImageButton
-                android:id="@+id/btnFavoriti"
+                android:id="@+id/btnMojeNarudzbe"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:src="@drawable/favoriti"
+                android:src="@android:drawable/ic_menu_agenda"
                 android:background="@android:color/transparent"
-                android:contentDescription="@string/favorites" />
+                android:contentDescription="Moje narudžbe"
+                android:visibility="gone" />
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

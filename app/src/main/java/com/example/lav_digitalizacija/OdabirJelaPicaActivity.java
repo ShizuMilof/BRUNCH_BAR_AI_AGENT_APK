@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -41,6 +42,7 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
     private TextView textViewMenuTitle;
 
     private TabLayout tabLayoutTop;
+    private ImageButton btnMojeNarudzbe;
     private TabLayout tabLayoutBottom;
     private ProgressBar progressBar;
 
@@ -49,28 +51,18 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
     private Button btnZavrsiNarudzbu;
     private Button btnPonistiNarudzbu;
 
-    private ImageButton btnFavoriti;
     private ImageButton btnAiChat;
 
     private long lastClickTime = 0;
-    private boolean favoritiAktivni = false;
 
     private String aktivniMeni = "hrana";
-
     private final HashMap<String, List<MenuItem>> artikliPoKategorijama = new HashMap<>();
 
     private final TabLayout.OnTabSelectedListener listener = new TabLayout.OnTabSelectedListener() {
         @Override
         public void onTabSelected(TabLayout.Tab tab) {
             if (tab == null || tab.getText() == null) return;
-
             String odabranaKategorija = tab.getText().toString();
-
-            if (favoritiAktivni) {
-                favoritiAktivni = false;
-                btnFavoriti.setImageResource(R.drawable.favoriti);
-            }
-
             prikaziArtiklePoKategoriji(odabranaKategorija);
         }
 
@@ -81,14 +73,7 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
         @Override
         public void onTabReselected(TabLayout.Tab tab) {
             if (tab == null || tab.getText() == null) return;
-
             String odabranaKategorija = tab.getText().toString();
-
-            if (favoritiAktivni) {
-                favoritiAktivni = false;
-                btnFavoriti.setImageResource(R.drawable.favoriti);
-            }
-
             prikaziArtiklePoKategoriji(odabranaKategorija);
         }
     };
@@ -98,6 +83,7 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_odabir_jela_pica);
+
         overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         initViews();
@@ -105,9 +91,14 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
         setupRecycler();
         setupButtons();
         setupTabs();
-
         ponistiNarudzbu();
         ucitajMeni();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        provjeriAktivneNarudzbeZaStol();
     }
 
     private void initViews() {
@@ -124,8 +115,7 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
         btnPica = findViewById(R.id.btnPica);
         btnZavrsiNarudzbu = findViewById(R.id.btnZavrsiNarudzbu);
         btnPonistiNarudzbu = findViewById(R.id.btnPonistiNarudzbu);
-
-        btnFavoriti = findViewById(R.id.btnFavoriti);
+        btnMojeNarudzbe = findViewById(R.id.btnMojeNarudzbe);
         btnAiChat = findViewById(R.id.btnAiChat);
     }
 
@@ -136,6 +126,37 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
         }
 
         osvjeziNaslovMenija();
+    }
+
+    private void animirajGumbMojeNarudzbe() {
+        if (btnMojeNarudzbe == null || btnMojeNarudzbe.getVisibility() != View.VISIBLE) return;
+
+        btnMojeNarudzbe.setScaleX(1f);
+        btnMojeNarudzbe.setScaleY(1f);
+        btnMojeNarudzbe.setAlpha(1f);
+
+        btnMojeNarudzbe.animate()
+                .scaleX(1.35f)
+                .scaleY(1.35f)
+                .alpha(0.6f)
+                .setDuration(250)
+                .withEndAction(() -> btnMojeNarudzbe.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .alpha(1f)
+                        .setDuration(250)
+                        .withEndAction(() -> btnMojeNarudzbe.animate()
+                                .scaleX(1.25f)
+                                .scaleY(1.25f)
+                                .setDuration(200)
+                                .withEndAction(() -> btnMojeNarudzbe.animate()
+                                        .scaleX(1f)
+                                        .scaleY(1f)
+                                        .setDuration(200)
+                                        .start())
+                                .start())
+                        .start())
+                .start();
     }
 
     private void setupRecycler() {
@@ -150,45 +171,27 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
     private void setupButtons() {
         btnHrana.setOnClickListener(v -> {
             aktivniMeni = "hrana";
-            favoritiAktivni = false;
-            btnFavoriti.setImageResource(R.drawable.favoriti);
+
             osvjeziNaslovMenija();
             ucitajMeni();
         });
 
         btnPica.setOnClickListener(v -> {
             aktivniMeni = "pica";
-            favoritiAktivni = false;
-            btnFavoriti.setImageResource(R.drawable.favoriti);
             osvjeziNaslovMenija();
             ucitajMeni();
         });
 
-        btnFavoriti.setOnClickListener(v -> {
-            favoritiAktivni = !favoritiAktivni;
+        btnMojeNarudzbe.setOnClickListener(v -> {
+            int tableNumber = getIntent().getIntExtra("tableNumber", -1);
+            String restaurant = getIntent().getStringExtra("restaurant");
+            String qrToken = getIntent().getStringExtra("qrToken");
 
-            if (favoritiAktivni) {
-                btnFavoriti.setImageResource(R.drawable.green_favoriti);
-                prikaziFavoriti();
-            } else {
-                btnFavoriti.setImageResource(R.drawable.favoriti);
-
-                TabLayout.Tab selectedTop = tabLayoutTop.getSelectedTabPosition() >= 0
-                        ? tabLayoutTop.getTabAt(tabLayoutTop.getSelectedTabPosition())
-                        : null;
-
-                TabLayout.Tab selectedBottom = tabLayoutBottom.getSelectedTabPosition() >= 0
-                        ? tabLayoutBottom.getTabAt(tabLayoutBottom.getSelectedTabPosition())
-                        : null;
-
-                if (selectedTop != null && selectedTop.getText() != null) {
-                    prikaziArtiklePoKategoriji(selectedTop.getText().toString());
-                } else if (selectedBottom != null && selectedBottom.getText() != null) {
-                    prikaziArtiklePoKategoriji(selectedBottom.getText().toString());
-                } else {
-                    ucitajMeni();
-                }
-            }
+            Intent intent = new Intent(OdabirJelaPicaActivity.this, AktivneNarudzbeActivity.class);
+            intent.putExtra("tableNumber", tableNumber);
+            intent.putExtra("restaurant", restaurant);
+            intent.putExtra("qrToken", qrToken);
+            startActivity(intent);
         });
 
         btnAiChat.setOnClickListener(v -> {
@@ -284,46 +287,59 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
         }
     }
 
-    private void prikaziFavoriti() {
-        List<MenuItem> favoriti = new ArrayList<>();
+    private void provjeriAktivneNarudzbeZaStol() {
+        int tableNumber = getIntent().getIntExtra("tableNumber", -1);
+        String qrToken = getIntent().getStringExtra("qrToken");
 
-        mDatabase = FirebaseDatabase.getInstance().getReference(aktivniMeni);
+        if (tableNumber == -1) {
+            btnMojeNarudzbe.setVisibility(View.GONE);
+            return;
+        }
 
-        mDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
+        DatabaseReference narudzbeRef = FirebaseDatabase.getInstance().getReference("narudzbe");
+
+        narudzbeRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for (DataSnapshot itemSnapshot : snapshot.getChildren()) {
-                    MenuItem item = itemSnapshot.getValue(MenuItem.class);
-                    if (item != null && item.isOmiljeno() && item.isDostupno()) {
-                        favoriti.add(item);
+                boolean imaAktivnih = false;
+
+                for (DataSnapshot narudzbaSnapshot : snapshot.getChildren()) {
+                    Integer brojStola = narudzbaSnapshot.child("brojStola").getValue(Integer.class);
+                    String status = narudzbaSnapshot.child("status").getValue(String.class);
+                    String firebaseQrToken = narudzbaSnapshot.child("qrToken").getValue(String.class);
+
+                    boolean istiStol = brojStola != null && brojStola == tableNumber;
+
+                    // privremeno olabavi uvjet da testiraš
+                    boolean istiQr = true;
+
+                    boolean aktivna = status != null
+                            && !status.equals("Dostavljeno")
+                            && !status.equals("Otkazano");
+
+                    if (istiStol && istiQr && aktivna) {
+                        imaAktivnih = true;
+                        break;
                     }
                 }
 
-                if (favoriti.isEmpty()) {
-                    Toast.makeText(OdabirJelaPicaActivity.this,
-                            R.string.favorites_empty,
-                            Toast.LENGTH_SHORT).show();
-                    return;
+                btnMojeNarudzbe.setVisibility(imaAktivnih ? View.VISIBLE : View.GONE);
+
+                boolean highlightOrdersButton = getIntent().getBooleanExtra("highlightOrdersButton", false);
+
+                if (imaAktivnih && highlightOrdersButton) {
+                    btnMojeNarudzbe.postDelayed(() -> animirajGumbMojeNarudzbe(), 200);
+                    getIntent().removeExtra("highlightOrdersButton");
                 }
-
-                Collator collator = Collator.getInstance(new Locale("hr", "HR"));
-                favoriti.sort((d1, d2) -> collator.compare(d1.getName(), d2.getName()));
-
-                List<MenuItem> stupcaniPrikaz = pretvoriUStupcaniPrikaz(favoriti);
-
-                mMenuItemList.clear();
-                mMenuItemList.addAll(stupcaniPrikaz);
-                mAdapter.notifyDataSetChanged();
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(OdabirJelaPicaActivity.this,
-                        R.string.favorites_load_error,
-                        Toast.LENGTH_SHORT).show();
+                btnMojeNarudzbe.setVisibility(View.GONE);
             }
         });
     }
+
 
     private void otvoriModifikacijeActivity(MenuItem menuItem) {
         long currentTime = System.currentTimeMillis();
@@ -426,6 +442,7 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
 
         return stupcaniPrikaz;
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {

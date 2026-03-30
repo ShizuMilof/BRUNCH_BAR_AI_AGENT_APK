@@ -16,7 +16,7 @@
 
         <meta-data
             android:name="firebase_analytics_collection_enabled"
-            android:value="false"/>
+            android:value="false" />
 
         <activity
             android:name=".LoginActivity"
@@ -32,7 +32,12 @@
         <activity android:name=".ModifikacijeActivity" />
         <activity android:name=".PregledNarudzbiActivity" />
         <activity android:name=".PregledMojihNarudzbiActivity" />
-        <activity android:name=".ChatActivity"/>
+        <activity android:name=".ChatActivity" />
+        <activity android:name=".PracenjeNarudzbeActivity" />
+        <activity android:name=".AktivneNarudzbeActivity" />
+        <activity android:name=".PotvrdaNarudzbeActivity" />
+        <activity android:name=".AzuriranjeNarudzbeActivity" />
+        <activity android:name=".KuhinjaActivity" />
     </application>
 
 
