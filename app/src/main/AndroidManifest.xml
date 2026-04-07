@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
-        android:name=".MyApp"
+        android:name=".core.MyApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -19,7 +19,7 @@
             android:value="false" />
 
         <activity
-            android:name=".LoginActivity"
+            android:name=".view.activity.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,17 +27,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".QrScannerActivity" />
-        <activity android:name=".OdabirJelaPicaActivity" />
-        <activity android:name=".ModifikacijeActivity" />
-        <activity android:name=".PregledNarudzbiActivity" />
-        <activity android:name=".PregledMojihNarudzbiActivity" />
-        <activity android:name=".ChatActivity" />
-        <activity android:name=".PracenjeNarudzbeActivity" />
-        <activity android:name=".AktivneNarudzbeActivity" />
-        <activity android:name=".PotvrdaNarudzbeActivity" />
-        <activity android:name=".AzuriranjeNarudzbeActivity" />
-        <activity android:name=".KuhinjaActivity" />
+        <activity android:name=".view.activity.QrScannerActivity" />
+        <activity android:name=".view.activity.OdabirJelaPicaActivity" />
+        <activity android:name=".view.activity.ModifikacijeActivity" />
+        <activity android:name=".view.activity.PregledNarudzbiActivity" />
+        <activity android:name=".view.activity.PregledMojihNarudzbiActivity" />
+        <activity android:name=".view.activity.ChatActivity" />
+        <activity android:name=".view.activity.PracenjeNarudzbeActivity" />
+        <activity android:name=".view.activity.AktivneNarudzbeActivity" />
+        <activity android:name=".view.activity.PotvrdaNarudzbeActivity" />
+        <activity android:name=".view.activity.AzuriranjeNarudzbeActivity" />
+        <activity android:name=".view.activity.KuhinjaActivity" />
     </application>
 
 

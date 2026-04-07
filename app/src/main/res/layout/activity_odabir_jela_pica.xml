@@ -7,29 +7,37 @@
 
     <TextView
         android:id="@+id/textViewTableNumber"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="12dp"
         android:text="@string/table_number_placeholder"
         android:textSize="20sp"
         android:textStyle="bold"
         android:textColor="@color/white"
-        android:layout_marginTop="12dp"
-        android:layout_marginStart="16dp"
+        android:maxLines="1"
+        android:ellipsize="end"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/menuSwitchContainer" />
 
     <TextView
         android:id="@+id/textViewMenuTitle"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="16dp"
         android:text="@string/menu_food"
-        android:textSize="18sp"
+        android:textSize="16sp"
         android:textStyle="bold"
         android:textColor="@color/white"
-        android:layout_marginStart="16dp"
-        app:layout_constraintStart_toEndOf="@id/textViewTableNumber"
-        app:layout_constraintTop_toTopOf="@id/textViewTableNumber"
-        app:layout_constraintBottom_toBottomOf="@id/textViewTableNumber" />
+        android:maxLines="1"
+        android:ellipsize="end"
+        app:layout_constraintTop_toBottomOf="@id/textViewTableNumber"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/menuSwitchContainer" />
 
     <LinearLayout
         android:id="@+id/menuSwitchContainer"
@@ -67,7 +75,7 @@
         android:layout_height="0dp"
         android:layout_marginTop="12dp"
         android:background="@color/black"
-        app:layout_constraintTop_toBottomOf="@id/textViewTableNumber"
+        app:layout_constraintTop_toBottomOf="@id/textViewMenuTitle"
         app:layout_constraintBottom_toTopOf="@+id/containerTotalSelected"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
