@@ -295,10 +295,27 @@ public class PregledNarudzbiActivity extends AppCompatActivity {
     private String extractItemNameFromOrder(String order) {
         try {
             int quantityIndex = order.lastIndexOf("(X");
-            if (quantityIndex != -1) {
-                return order.substring(0, quantityIndex).trim();
+            String base = quantityIndex != -1
+                    ? order.substring(0, quantityIndex).trim()
+                    : order.trim();
+
+            String modPrefix = getString(R.string.order_modifications_prefix);
+            if (modPrefix != null && !modPrefix.isEmpty()) {
+                int modIndex = base.indexOf(modPrefix);
+                if (modIndex != -1) {
+                    base = base.substring(0, modIndex).trim();
+                }
             }
-            return order.trim();
+
+            String notePrefix = getString(R.string.order_note_prefix);
+            if (notePrefix != null && !notePrefix.isEmpty()) {
+                int noteIndex = base.indexOf(notePrefix);
+                if (noteIndex != -1) {
+                    base = base.substring(0, noteIndex).trim();
+                }
+            }
+
+            return base;
         } catch (Exception e) {
             Log.e("PregledNarudzbiActivity", "Greška pri čitanju naziva artikla: " + order, e);
             return order.trim();
