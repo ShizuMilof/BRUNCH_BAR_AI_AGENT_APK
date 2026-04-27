@@ -41,6 +41,9 @@ public class ModifikacijeActivity extends AppCompatActivity {
     private String nazivPica;
     private List<String> modifikacijeList;
     private int kolicina = 1;
+    private boolean editMode = false;
+    private int editPosition = -1;
+    private String existingOrder = "";
 
     private List<String> odabraneModifikacije;
 
@@ -68,6 +71,20 @@ public class ModifikacijeActivity extends AppCompatActivity {
         odabraneModifikacije = new ArrayList<>();
 
         Intent intent = getIntent();
+        editMode = intent.getBooleanExtra("editMode", false);
+        editPosition = intent.getIntExtra("editPosition", -1);
+        existingOrder = intent.getStringExtra("existingOrder");
+        kolicina = intent.getIntExtra("existingQuantity", 1);
+
+        if (existingOrder == null) {
+            existingOrder = "";
+        }
+
+        if (editMode && !existingOrder.trim().isEmpty()) {
+            odabraneModifikacije.clear();
+            odabraneModifikacije.addAll(extractExistingModifications(existingOrder));
+            editTextNapomena.setText(extractExistingNote(existingOrder));
+        }
         nazivPica = intent.getStringExtra("proizvod");
         modifikacijeList = intent.getStringArrayListExtra("modifikacije");
         String imageUrl = intent.getStringExtra("imageUrl");
@@ -117,9 +134,61 @@ public class ModifikacijeActivity extends AppCompatActivity {
         }
     }
 
+
+    private String extractExistingNote(String order) {
+        if (order == null || order.trim().isEmpty()) return "";
+
+        String prefix = getString(R.string.order_note_prefix);
+
+        int start = order.indexOf(prefix);
+        if (start == -1) return "";
+
+        start += prefix.length();
+
+        int endQuantity = order.lastIndexOf("(X");
+        int end = endQuantity != -1 ? endQuantity : order.length();
+
+        return order.substring(start, end).trim();
+    }
+
     private void povecajKolicinu() {
         kolicina++;
         textViewKolicinaBroj.setText(String.valueOf(kolicina));
+    }
+
+    private ArrayList<String> extractExistingModifications(String order) {
+        ArrayList<String> result = new ArrayList<>();
+
+        if (order == null || order.trim().isEmpty()) return result;
+
+        String prefix = getString(R.string.order_modifications_prefix);
+
+        int start = order.indexOf(prefix);
+        if (start == -1) return result;
+
+        start += prefix.length();
+
+        int endNapomena = order.indexOf(getString(R.string.order_note_prefix), start);
+        int endQuantity = order.lastIndexOf("(X");
+
+        int end = order.length();
+
+        if (endNapomena != -1) {
+            end = endNapomena;
+        } else if (endQuantity != -1) {
+            end = endQuantity;
+        }
+
+        String modsText = order.substring(start, end).trim();
+
+        for (String mod : modsText.split(",")) {
+            String clean = mod.trim();
+            if (!clean.isEmpty()) {
+                result.add(clean);
+            }
+        }
+
+        return result;
     }
 
     private void dodajUNarudzbu() {
@@ -128,16 +197,19 @@ public class ModifikacijeActivity extends AppCompatActivity {
         narudzba.append(nazivPica);
 
         if (!odabraneModifikacije.isEmpty()) {
-            narudzba.append(getString(R.string.order_modifications_prefix))
+            narudzba.append("\n\n")
+                    .append(getString(R.string.order_modifications_prefix))
                     .append(String.join(", ", odabraneModifikacije));
         }
 
-        narudzba.append(getString(R.string.order_quantity_format, kolicina));
-
         if (!napomena.isEmpty()) {
-            narudzba.append(getString(R.string.order_note_prefix))
+            narudzba.append("\n\n")
+                    .append(getString(R.string.order_note_prefix))
                     .append(napomena);
         }
+
+        narudzba.append(" ")
+                .append(getString(R.string.order_quantity_format, kolicina));
 
         SharedPreferences preferences = getSharedPreferences("narudzba", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
@@ -150,7 +222,11 @@ public class ModifikacijeActivity extends AppCompatActivity {
                 ? new ArrayList<>()
                 : gson.fromJson(json, type);
 
-        narudzbeList.add(narudzba.toString());
+        if (editMode && editPosition >= 0 && editPosition < narudzbeList.size()) {
+            narudzbeList.set(editPosition, narudzba.toString());
+        } else {
+            narudzbeList.add(narudzba.toString());
+        }
         editor.putString("narudzbe", gson.toJson(narudzbeList));
         editor.apply();
 

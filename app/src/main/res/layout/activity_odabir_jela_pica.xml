@@ -186,27 +186,32 @@
         android:id="@+id/tabLayoutTop"
         android:layout_width="0dp"
         android:layout_height="55dp"
-        android:backgroundTint="@color/white"
+        android:background="@color/white"
         app:tabMode="fixed"
+        app:tabGravity="fill"
+        app:tabMaxWidth="0dp"
         app:tabTextColor="@color/black"
-        app:tabIndicatorHeight="3dp"
-        app:tabIndicatorColor="@color/white"
+        app:tabIndicatorHeight="0dp"
+        app:tabRippleColor="@android:color/transparent"
         app:tabBackground="@color/white"
         app:layout_constraintBottom_toTopOf="@id/tabLayoutBottom"
         app:layout_constraintStart_toStartOf="parent"
+
         app:layout_constraintEnd_toEndOf="parent" />
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayoutBottom"
         android:layout_width="0dp"
         android:layout_height="55dp"
-        app:tabIndicatorColor="@color/white"
-        app:tabBackground="@color/white"
+        android:background="@color/white"
         app:tabMode="fixed"
+        app:tabGravity="fill"
+        app:tabMaxWidth="0dp"
         app:tabTextColor="@color/black"
-        app:tabIndicatorHeight="3dp"
+        app:tabIndicatorHeight="0dp"
+        app:tabRippleColor="@android:color/transparent"
+        app:tabBackground="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>

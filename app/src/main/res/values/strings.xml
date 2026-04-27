@@ -64,10 +64,13 @@
     <string name="minus_symbol">-</string>
     <string name="plus_symbol">+</string>
     <string name="modifications_image_desc">Slika artikla</string>
-    <string name="order_modifications_prefix">: </string>
+    <string name="order_modifications_prefix">MODIFIKACIJE: </string>
     <string name="order_quantity_format"> (X%1$d)</string>
-    <string name="order_note_prefix">\n\nNAPOMENA: </string>
+    <!-- za logiku (parsiranje) -->
+    <string name="order_note_prefix">NAPOMENA:</string>
 
+    <!-- za prikaz (UI) -->
+    <string name="order_note_prefix_display">\n\nNAPOMENA: </string>
     <!-- PREGLED NARUDZBI -->
     <string name="send_order">POŠALJI NARUDŽBU</string>
     <string name="order_item_deleted">STAVKA OBRISANA</string>

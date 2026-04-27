@@ -2,12 +2,19 @@ package com.example.lav_digitalizacija.view.activity;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.HorizontalScrollView;
+import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -16,7 +23,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.lav_digitalizacija.R;
 import com.example.lav_digitalizacija.model.ChatMessage;
 import com.example.lav_digitalizacija.view.adapter.ChatAdapter;
-import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.common.reflect.TypeToken;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -24,15 +30,20 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.MutableData;
+import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.functions.FirebaseFunctions;
 import com.google.firebase.functions.FirebaseFunctionsException;
 import com.google.gson.Gson;
 
 import java.lang.reflect.Type;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class ChatActivity extends AppCompatActivity {
@@ -41,26 +52,29 @@ public class ChatActivity extends AppCompatActivity {
     private EditText etMessage;
     private Button btnSend;
 
-    private FirebaseFunctions functions;
+    private HorizontalScrollView actionsScroll;
+    private LinearLayout layoutQuickActions;
 
+    private FirebaseFunctions functions;
     private ChatAdapter adapter;
 
     private DatabaseReference chatHistoryRef;
     private String userId;
 
     private String pendingAction = null;
-    private ArrayList<String> pendingRepeatItems = new ArrayList<>();
+    private final ArrayList<String> pendingItems = new ArrayList<>();
     private final List<ChatMessage> messages = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
-        int st = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this);
 
         rvChat = findViewById(R.id.rvChat);
         etMessage = findViewById(R.id.etMessage);
         btnSend = findViewById(R.id.btnSend);
+        actionsScroll = findViewById(R.id.actionsScroll);
+        layoutQuickActions = findViewById(R.id.layoutQuickActions);
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         userId = currentUser != null ? currentUser.getUid() : null;
@@ -80,58 +94,21 @@ public class ChatActivity extends AppCompatActivity {
         rvChat.setLayoutManager(lm);
         rvChat.setAdapter(adapter);
 
-        ucitajZadnjePoruke();
-
-        // Kad se ponovno uđe u chat, ne nastavljaj stari confirmation flow
         pendingAction = null;
-        pendingRepeatItems.clear();
+        pendingItems.clear();
+
+        ucitajZadnjePoruke();
 
         btnSend.setOnClickListener(v -> {
             String text = etMessage.getText().toString().trim();
             if (text.isEmpty()) return;
 
-            // Ako postoji aktivan pending flow, obradi potvrdu/odbijanje lokalno
             if (pendingAction != null) {
-                if (jePotvrda(text)) {
-                    ChatMessage userMessage = new ChatMessage(text, true);
-                    adapter.addMessage(userMessage);
-                    spremiPorukuUHistory(userMessage);
-                    rvChat.scrollToPosition(messages.size() - 1);
-
-                    if ("repeat_last_order".equals(pendingAction)) {
-                        potvrdiDodavanjeProsleNarudzbe(new ArrayList<>(pendingRepeatItems));
-                    }
-
-                    pendingAction = null;
-                    pendingRepeatItems.clear();
-                    etMessage.setText("");
-                    return;
-                }
-
-                if (jeOdbijanje(text)) {
-                    ChatMessage userMessage = new ChatMessage(text, true);
-                    adapter.addMessage(userMessage);
-                    spremiPorukuUHistory(userMessage);
-                    rvChat.scrollToPosition(messages.size() - 1);
-
-                    ChatMessage aiMessage = new ChatMessage(
-                            "U redu, neću dodati prošlu narudžbu.",
-                            false
-                    );
-                    adapter.addMessage(aiMessage);
-                    spremiPorukuUHistory(aiMessage);
-                    rvChat.scrollToPosition(messages.size() - 1);
-
-                    pendingAction = null;
-                    pendingRepeatItems.clear();
-                    etMessage.setText("");
-                    return;
-                }
+                obradiPendingFlow(text);
+                return;
             }
 
-            // Ako nema aktivnog flowa, a korisnik napiše samo potvrdu,
-            // nemoj to slati AI-u jer vodi u petlju sa starim porukama
-            if (jePotvrda(text) && pendingAction == null) {
+            if (jePotvrda(text)) {
                 ChatMessage userMessage = new ChatMessage(text, true);
                 adapter.addMessage(userMessage);
                 spremiPorukuUHistory(userMessage);
@@ -139,7 +116,7 @@ public class ChatActivity extends AppCompatActivity {
                 etMessage.setText("");
 
                 ChatMessage aiMessage = new ChatMessage(
-                        "Ako želiš ponovno dodati prošlu narudžbu, upiši točno: Naruci mi kao prosli put.",
+                        "Ako želiš da nešto dodam kroz chat, napiši što želiš naručiti ili odaberi neku ponuđenu opciju.",
                         false
                 );
                 adapter.addMessage(aiMessage);
@@ -158,22 +135,152 @@ public class ChatActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (!messages.isEmpty()) {
+            refreshHomeActionsOnly();
+        }
+    }
+
+    private void refreshHomeActionsOnly() {
+        Map<String, Object> data = buildBasePayload();
+        data.put("message", "");
+        data.put("action", "open_home");
+
+        functions.getHttpsCallable("chatWaiter")
+                .call(data)
+                .addOnSuccessListener(result -> {
+                    ParsedResponse parsed = parseResponse(result.getData());
+                    showQuickActions(parsed.actions);
+                })
+                .addOnFailureListener(e -> Log.e("CHAT_FN", "Failed to refresh home actions", e));
+    }
+
+    private void potvrdiSlanjeNarudzbeUKuhinju(ArrayList<String> items) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        SharedPreferences prefs = getSharedPreferences("user_data", MODE_PRIVATE);
+        String nickname = prefs.getString("nickname", "Gost");
+
+        View view = getLayoutInflater().inflate(R.layout.dialog_repeat_order, null);
+        builder.setView(view);
+
+        AlertDialog dialog = builder.create();
+        dialog.setCancelable(true);
+        dialog.show();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
+            );
+        }
+
+        android.widget.TextView tvRepeatMessage = view.findViewById(R.id.tvRepeatMessage);
+        android.widget.Button btnRepeatAdd = view.findViewById(R.id.btnRepeatAdd);
+        android.widget.Button btnRepeatCancel = view.findViewById(R.id.btnRepeatCancel);
+
+        if (items != null && !items.isEmpty()) {
+            ArrayList<String> formattedItems = new ArrayList<>();
+            for (String item : items) {
+                formattedItems.add(formatOrderItemForDisplay(item));
+            }
+
+            tvRepeatMessage.setText(
+                    nickname + ", želiš li odmah poslati ovu narudžbu u kuhinju?\n\n" +
+                            android.text.TextUtils.join("\n", formattedItems)
+            );
+        }
+
+        btnRepeatAdd.setText("Pošalji");
+        btnRepeatAdd.setOnClickListener(v -> {
+            dialog.dismiss();
+
+            ChatMessage doneMessage = new ChatMessage(
+                    "Narudžba je poslana u kuhinju.",
+                    false
+            );
+            adapter.addMessage(doneMessage);
+            spremiPorukuUHistory(doneMessage);
+            rvChat.scrollToPosition(messages.size() - 1);
+
+            refreshHomeActionsOnly();
+        });
+
+        btnRepeatCancel.setOnClickListener(v -> dialog.dismiss());
+    }
+
+    private void obradiPendingFlow(String text) {
+        if (jePotvrda(text)) {
+            ChatMessage userMessage = new ChatMessage(text, true);
+            adapter.addMessage(userMessage);
+            spremiPorukuUHistory(userMessage);
+            rvChat.scrollToPosition(messages.size() - 1);
+
+            if ("repeat_last_order".equals(pendingAction)
+                    || "create_order_draft".equals(pendingAction)
+                    || "repeat_last_order_to_cart".equals(pendingAction)
+                    || "repeat_last_any_order_to_cart".equals(pendingAction)) {
+                potvrdiDodavanjeStavkiUKosaricu(new ArrayList<>(pendingItems));
+            }
+
+            pendingAction = null;
+            pendingItems.clear();
+            etMessage.setText("");
+            return;
+        }
+
+        if (jeOdbijanje(text)) {
+            ChatMessage userMessage = new ChatMessage(text, true);
+            adapter.addMessage(userMessage);
+            spremiPorukuUHistory(userMessage);
+            rvChat.scrollToPosition(messages.size() - 1);
+
+            ChatMessage aiMessage = new ChatMessage(
+                    "U redu, neću ništa dodati u košaricu.",
+                    false
+            );
+            adapter.addMessage(aiMessage);
+            spremiPorukuUHistory(aiMessage);
+            rvChat.scrollToPosition(messages.size() - 1);
+
+            pendingAction = null;
+            pendingItems.clear();
+            etMessage.setText("");
+            return;
+        }
+
+        ChatMessage userMessage = new ChatMessage(text, true);
+        adapter.addMessage(userMessage);
+        spremiPorukuUHistory(userMessage);
+        rvChat.scrollToPosition(messages.size() - 1);
+        etMessage.setText("");
+
+        ChatMessage aiMessage = new ChatMessage(
+                "Molim te potvrdi s 'da' ili odustani s 'ne'.",
+                false
+        );
+        adapter.addMessage(aiMessage);
+        spremiPorukuUHistory(aiMessage);
+        rvChat.scrollToPosition(messages.size() - 1);
+    }
+
     private boolean jePotvrda(String text) {
         String t = text.toLowerCase().trim();
-        return t.equals("da") ||
-                t.equals("moze") ||
-                t.equals("može") ||
-                t.equals("ok") ||
-                t.equals("okej") ||
-                t.equals("yes");
+        return t.equals("da")
+                || t.equals("moze")
+                || t.equals("može")
+                || t.equals("ok")
+                || t.equals("okej")
+                || t.equals("yes");
     }
 
     private boolean jeOdbijanje(String text) {
         String t = text.toLowerCase().trim();
-        return t.equals("ne") ||
-                t.equals("nemoj") ||
-                t.equals("odustani") ||
-                t.equals("cancel");
+        return t.equals("ne")
+                || t.equals("nemoj")
+                || t.equals("odustani")
+                || t.equals("cancel");
     }
 
     private void ucitajZadnjePoruke() {
@@ -191,7 +298,6 @@ public class ChatActivity extends AppCompatActivity {
 
                         for (DataSnapshot child : snapshot.getChildren()) {
                             ChatMessage msg = child.getValue(ChatMessage.class);
-
                             if (msg != null && msg.getText() != null) {
                                 messages.add(msg);
                             }
@@ -201,6 +307,7 @@ public class ChatActivity extends AppCompatActivity {
 
                         if (!messages.isEmpty()) {
                             rvChat.scrollToPosition(messages.size() - 1);
+                            refreshHomeActionsOnly();
                         } else {
                             prikaziWelcomePorukuAkoTreba();
                         }
@@ -213,19 +320,9 @@ public class ChatActivity extends AppCompatActivity {
                 });
     }
 
-
     private void prikaziWelcomePorukuAkoTreba() {
-        SharedPreferences prefs = getSharedPreferences("user_data", MODE_PRIVATE);
-        String nickname = prefs.getString("nickname", "Gost");
-
         if (messages.isEmpty()) {
-            ChatMessage welcomeMessage = new ChatMessage(
-                    "Bok, " + nickname + "! " + getString(R.string.chat_welcome),
-                    false
-            );
-            messages.add(welcomeMessage);
-            adapter.notifyDataSetChanged();
-            rvChat.scrollToPosition(messages.size() - 1);
+            sendActionToAI("open_home", "Početak");
         }
     }
 
@@ -236,6 +333,120 @@ public class ChatActivity extends AppCompatActivity {
         if (key != null) {
             chatHistoryRef.child(key).setValue(message);
         }
+    }
+
+    private void clearQuickActions() {
+        if (layoutQuickActions != null) {
+            layoutQuickActions.removeAllViews();
+        }
+        if (actionsScroll != null) {
+            actionsScroll.setVisibility(View.GONE);
+        }
+    }
+
+    private void showQuickActions(ArrayList<Map<String, String>> actions) {
+        clearQuickActions();
+
+        actions = withHomeActions(actions);
+
+        if (actions == null || actions.isEmpty() || layoutQuickActions == null || actionsScroll == null) {
+            return;
+        }
+
+        for (Map<String, String> action : actions) {
+            if (action == null) continue;
+
+            String actionId = action.get("id");
+            String label = action.get("label");
+
+            if (actionId == null || label == null) continue;
+
+            Button button = new Button(this);
+            button.setText(label);
+            button.setAllCaps(false);
+            button.setTextSize(14f);
+            button.setTextColor(getResources().getColor(android.R.color.white));
+            button.setBackgroundTintList(ColorStateList.valueOf(Color.BLACK));
+
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            params.setMargins(8, 0, 8, 0);
+            button.setLayoutParams(params);
+
+            button.setOnClickListener(v -> {
+                ChatMessage userMessage = new ChatMessage(label, true);
+                adapter.addMessage(userMessage);
+                spremiPorukuUHistory(userMessage);
+                rvChat.scrollToPosition(messages.size() - 1);
+
+                clearQuickActions();
+
+                if ("go_to_cart".equals(actionId)) {
+                    otvoriPregledNarudzbe();
+                    return;
+                }
+
+                sendActionToAI(actionId, label);
+            });
+
+            layoutQuickActions.addView(button);
+        }
+
+        actionsScroll.setVisibility(View.VISIBLE);
+    }
+
+    private void otvoriPregledNarudzbe() {
+        int tableNumber = getIntent().getIntExtra("tableNumber", -1);
+        String restaurant = getIntent().getStringExtra("restaurant");
+        String qrToken = getIntent().getStringExtra("qrToken");
+
+        Intent intent = new Intent(ChatActivity.this, PregledNarudzbiActivity.class);
+        intent.putExtra("tableNumber", tableNumber);
+        intent.putExtra("restaurant", restaurant);
+        intent.putExtra("qrToken", qrToken);
+        startActivity(intent);
+    }
+
+    private ArrayList<Map<String, String>> withHomeActions(ArrayList<Map<String, String>> actions) {
+        ArrayList<Map<String, String>> merged = new ArrayList<>();
+        java.util.HashSet<String> ids = new java.util.HashSet<>();
+
+        if (actions != null) {
+            for (Map<String, String> action : actions) {
+                if (action == null) continue;
+
+                String id = action.get("id");
+                if (id != null && !ids.contains(id)) {
+                    merged.add(action);
+                    ids.add(id);
+                }
+            }
+        }
+
+        if (!merged.isEmpty()) {
+            return merged;
+        }
+
+        merged.add(makeAction("open_last_delivered_order", "Moja zadnja dostavljena narudžba", ids));
+        merged.add(makeAction("open_last_any_order", "Moja zadnja narudžba", ids));
+        merged.add(makeAction("open_personal_recommendations", "Preporuči mi nešto", ids));
+        merged.add(makeAction("open_popular_items", "Što je popularno", ids));
+        merged.add(makeAction("open_order_status", "Status narudžbe", ids));
+        merged.add(makeAction("open_new_order", "Nova narudžba", ids));
+
+        return merged;
+    }
+
+    private Map<String, String> makeAction(String id, String label, java.util.HashSet<String> ids) {
+        if (ids.contains(id)) return null;
+
+        Map<String, String> map = new HashMap<>();
+        map.put("id", id);
+        map.put("label", label);
+        ids.add(id);
+        return map;
     }
 
     private int extractQuantityFromOrder(String order) {
@@ -254,7 +465,22 @@ public class ChatActivity extends AppCompatActivity {
         return 1;
     }
 
-    private void dodajProsleStavkeUKosaricu(ArrayList<String> repeatItems) {
+    private String formatOrderItemForDisplay(String order) {
+        try {
+            int quantity = extractQuantityFromOrder(order);
+
+            int quantityIndex = order.lastIndexOf("(X");
+            String base = quantityIndex != -1
+                    ? order.substring(0, quantityIndex).trim()
+                    : order.trim();
+
+            return base + " (x" + quantity + ")";
+        } catch (Exception e) {
+            return order;
+        }
+    }
+
+    private void dodajStavkeUKosaricu(ArrayList<String> items) {
         SharedPreferences preferences = getSharedPreferences("narudzba", MODE_PRIVATE);
         Gson gson = new Gson();
 
@@ -269,7 +495,7 @@ public class ChatActivity extends AppCompatActivity {
             currentOrders = new ArrayList<>();
         }
 
-        currentOrders.addAll(repeatItems);
+        currentOrders.addAll(items);
 
         int totalSelected = 0;
         for (String item : currentOrders) {
@@ -280,12 +506,6 @@ public class ChatActivity extends AppCompatActivity {
                 .putString("narudzbe", gson.toJson(currentOrders))
                 .putInt("total_selected", totalSelected)
                 .apply();
-
-        adapter.addMessage(new ChatMessage(
-                "Dodao sam prošlu narudžbu u tvoju košaricu i otvaram pregled.",
-                false
-        ));
-        rvChat.scrollToPosition(messages.size() - 1);
 
         int tableNumber = getIntent().getIntExtra("tableNumber", -1);
         String restaurant = getIntent().getStringExtra("restaurant");
@@ -299,6 +519,74 @@ public class ChatActivity extends AppCompatActivity {
         finish();
     }
 
+    private void dodajStavkeUKosaricuBezOtvaranja(ArrayList<String> items) {
+        SharedPreferences preferences = getSharedPreferences("narudzba", MODE_PRIVATE);
+        Gson gson = new Gson();
+
+        String existingJson = preferences.getString("narudzbe", null);
+        Type type = new TypeToken<ArrayList<String>>() {
+        }.getType();
+
+        ArrayList<String> currentOrders =
+                existingJson == null ? new ArrayList<>() : gson.fromJson(existingJson, type);
+
+        if (currentOrders == null) {
+            currentOrders = new ArrayList<>();
+        }
+
+        currentOrders.addAll(items);
+
+        int totalSelected = 0;
+        for (String item : currentOrders) {
+            totalSelected += extractQuantityFromOrder(item);
+        }
+
+        preferences.edit()
+                .putString("narudzbe", gson.toJson(currentOrders))
+                .putInt("total_selected", totalSelected)
+                .apply();
+    }
+
+    private void potvrdiDodavanjeStavkiUKosaricu(ArrayList<String> items) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        SharedPreferences prefs = getSharedPreferences("user_data", MODE_PRIVATE);
+        String nickname = prefs.getString("nickname", "Gost");
+        View view = getLayoutInflater().inflate(R.layout.dialog_repeat_order, null);
+        builder.setView(view);
+
+        AlertDialog dialog = builder.create();
+        dialog.setCancelable(true);
+        dialog.show();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
+            );
+        }
+
+        android.widget.TextView tvRepeatMessage = view.findViewById(R.id.tvRepeatMessage);
+        android.widget.Button btnRepeatAdd = view.findViewById(R.id.btnRepeatAdd);
+        android.widget.Button btnRepeatCancel = view.findViewById(R.id.btnRepeatCancel);
+
+        if (items != null && !items.isEmpty()) {
+            ArrayList<String> formattedItems = new ArrayList<>();
+            for (String item : items) {
+                formattedItems.add(formatOrderItemForDisplay(item));
+            }
+
+            tvRepeatMessage.setText(
+                    nickname + ", želiš li dodati ove stavke u košaricu?\n\n" +
+                            android.text.TextUtils.join("\n", formattedItems)
+            );
+        }
+
+        btnRepeatAdd.setOnClickListener(v -> {
+            dialog.dismiss();
+            dodajStavkeUKosaricu(items);
+        });
+
+        btnRepeatCancel.setOnClickListener(v -> dialog.dismiss());
+    }
 
     private ArrayList<Map<String, Object>> buildChatHistory() {
         ArrayList<Map<String, Object>> history = new ArrayList<>();
@@ -319,45 +607,427 @@ public class ChatActivity extends AppCompatActivity {
         return history;
     }
 
-    private void potvrdiDodavanjeProsleNarudzbe(ArrayList<String> repeatItems) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        SharedPreferences prefs = getSharedPreferences("user_data", MODE_PRIVATE);
-        String nickname = prefs.getString("nickname", "Gost");
-        android.view.View view = getLayoutInflater().inflate(R.layout.dialog_repeat_order, null);
-        builder.setView(view);
-
-        AlertDialog dialog = builder.create();
-        dialog.setCancelable(true);
-        dialog.show();
-
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(
-                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
-            );
-        }
-
-        android.widget.TextView tvRepeatMessage = view.findViewById(R.id.tvRepeatMessage);
-        android.widget.Button btnRepeatAdd = view.findViewById(R.id.btnRepeatAdd);
-        android.widget.Button btnRepeatCancel = view.findViewById(R.id.btnRepeatCancel);
-
-        if (repeatItems != null && !repeatItems.isEmpty()) {
-            tvRepeatMessage.setText(
-                    nickname + ", želiš li dodati ovu narudžbu u košaricu?\n\n" +
-                            android.text.TextUtils.join("\n", repeatItems)
-            );
-        }
-
-        btnRepeatAdd.setOnClickListener(v -> {
-            dialog.dismiss();
-            dodajProsleStavkeUKosaricu(repeatItems);
-        });
-
-        btnRepeatCancel.setOnClickListener(v -> dialog.dismiss());
+    private static class ParsedResponse {
+        String message;
+        String type;
+        ArrayList<String> items = new ArrayList<>();
+        ArrayList<Map<String, String>> actions = new ArrayList<>();
     }
 
-    private void sendToAI(String userText) {
+    @SuppressWarnings("unchecked")
+    private ParsedResponse parseResponse(Object rawData) {
+        ParsedResponse parsed = new ParsedResponse();
+
+        if (!(rawData instanceof Map<?, ?>)) {
+            return parsed;
+        }
+
+        Map<String, Object> response = (Map<String, Object>) rawData;
+
+        parsed.message = (String) response.get("message");
+        parsed.type = (String) response.get("type");
+
+        Object itemsObj = response.get("items");
+        if (itemsObj instanceof List<?>) {
+            for (Object item : (List<?>) itemsObj) {
+                if (item instanceof String) {
+                    parsed.items.add((String) item);
+                }
+            }
+        }
+
+        Object actionsObj = response.get("actions");
+        if (actionsObj instanceof List<?>) {
+            for (Object actionObj : (List<?>) actionsObj) {
+                if (actionObj instanceof Map<?, ?>) {
+                    Object idObj = ((Map<?, ?>) actionObj).get("id");
+                    Object labelObj = ((Map<?, ?>) actionObj).get("label");
+
+                    if (idObj instanceof String && labelObj instanceof String) {
+                        Map<String, String> actionMap = new HashMap<>();
+                        actionMap.put("id", (String) idObj);
+                        actionMap.put("label", (String) labelObj);
+                        parsed.actions.add(actionMap);
+                    }
+                }
+            }
+        }
+
+        return parsed;
+    }
+
+    private void applyResponse(ParsedResponse parsed) {
+        String message = parsed.message;
+        String type = parsed.type;
+
+        if (message == null || message.isEmpty()) {
+            message = getString(R.string.chat_no_response);
+        }
+
+        ChatMessage aiMessage = new ChatMessage(message, false);
+        adapter.addMessage(aiMessage);
+        spremiPorukuUHistory(aiMessage);
+        rvChat.scrollToPosition(messages.size() - 1);
+
+        if (("repeat_last_order".equals(type)
+                || "create_order_draft".equals(type)
+                || "repeat_last_order_submit".equals(type)
+                || "repeat_last_order_to_cart".equals(type)
+                || "repeat_last_any_order_submit".equals(type)
+                || "repeat_last_any_order_to_cart".equals(type))
+                && parsed.items != null
+                && !parsed.items.isEmpty()) {
+
+            pendingAction = type;
+            pendingItems.clear();
+            pendingItems.addAll(parsed.items);
+        } else {
+            pendingAction = null;
+            pendingItems.clear();
+        }
+
+        if ("repeat_last_order_submit".equals(type)
+                || "repeat_last_any_order_submit".equals(type)) {
+            showYesNoActionsForRepeatSubmit();
+        } else if ("repeat_last_order_to_cart".equals(type)
+                || "repeat_last_any_order_to_cart".equals(type)) {
+            showYesNoActionsForRepeatToCart();
+        } else {
+            showQuickActions(parsed.actions);
+        }
+
+        if (("recommendation_added".equals(type)
+                || "menu_item_added".equals(type))
+                && parsed.items != null
+                && !parsed.items.isEmpty()) {
+            dodajStavkeUKosaricuBezOtvaranja(new ArrayList<>(parsed.items));
+        }
+    }
+
+    private void postaviStavkeUKosaricu(ArrayList<String> items, boolean otvoriPregled) {
+        SharedPreferences preferences = getSharedPreferences("narudzba", MODE_PRIVATE);
+        Gson gson = new Gson();
+
+        ArrayList<String> noveNarudzbe = new ArrayList<>();
+        if (items != null) {
+            noveNarudzbe.addAll(items);
+        }
+
+        int totalSelected = 0;
+        for (String item : noveNarudzbe) {
+            totalSelected += extractQuantityFromOrder(item);
+        }
+
+        preferences.edit()
+                .putString("narudzbe", gson.toJson(noveNarudzbe))
+                .putInt("total_selected", totalSelected)
+                .apply();
+
+        if (otvoriPregled) {
+            int tableNumber = getIntent().getIntExtra("tableNumber", -1);
+            String restaurant = getIntent().getStringExtra("restaurant");
+            String qrToken = getIntent().getStringExtra("qrToken");
+
+            Intent intent = new Intent(ChatActivity.this, PregledNarudzbiActivity.class);
+            intent.putExtra("tableNumber", tableNumber);
+            intent.putExtra("restaurant", restaurant);
+            intent.putExtra("qrToken", qrToken);
+            startActivity(intent);
+            finish();
+        }
+    }
+
+    private void showYesNoActionsForRepeatToCart() {
+        clearQuickActions();
+
+        if (layoutQuickActions == null || actionsScroll == null) {
+            return;
+        }
+
+        Button btnDa = new Button(this);
+        btnDa.setText("Da");
+        btnDa.setAllCaps(false);
+        btnDa.setTextSize(14f);
+        btnDa.setTextColor(getResources().getColor(android.R.color.white));
+        btnDa.setBackgroundTintList(ColorStateList.valueOf(Color.BLACK));
+
+        LinearLayout.LayoutParams daParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        daParams.setMargins(8, 0, 8, 0);
+        btnDa.setLayoutParams(daParams);
+
+        btnDa.setOnClickListener(v -> {
+            clearQuickActions();
+
+            ChatMessage userMessage = new ChatMessage("Da", true);
+            adapter.addMessage(userMessage);
+            spremiPorukuUHistory(userMessage);
+            rvChat.scrollToPosition(messages.size() - 1);
+
+            ArrayList<String> itemsToAdd = new ArrayList<>(pendingItems);
+
+            pendingAction = null;
+            pendingItems.clear();
+
+            ChatMessage aiMessage = new ChatMessage(
+                    "Maknuo sam prethodne stavke iz košarice i prebacio odabranu narudžbu za prilagodbu.",
+                    false
+            );
+            adapter.addMessage(aiMessage);
+            spremiPorukuUHistory(aiMessage);
+            rvChat.scrollToPosition(messages.size() - 1);
+
+            postaviStavkeUKosaricu(itemsToAdd, true);
+        });
+
+        Button btnNe = new Button(this);
+        btnNe.setText("Ne");
+        btnNe.setAllCaps(false);
+        btnNe.setTextSize(14f);
+        btnNe.setTextColor(getResources().getColor(android.R.color.white));
+        btnNe.setBackgroundTintList(ColorStateList.valueOf(Color.BLACK));
+
+        LinearLayout.LayoutParams neParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        neParams.setMargins(8, 0, 8, 0);
+        btnNe.setLayoutParams(neParams);
+
+        btnNe.setOnClickListener(v -> {
+            clearQuickActions();
+
+            ChatMessage userMessage = new ChatMessage("Ne", true);
+            adapter.addMessage(userMessage);
+            spremiPorukuUHistory(userMessage);
+            rvChat.scrollToPosition(messages.size() - 1);
+
+            ChatMessage aiMessage = new ChatMessage(
+                    "U redu, neću prebaciti prošlu narudžbu u košaricu.",
+                    false
+            );
+            adapter.addMessage(aiMessage);
+            spremiPorukuUHistory(aiMessage);
+            rvChat.scrollToPosition(messages.size() - 1);
+
+            pendingAction = null;
+            pendingItems.clear();
+
+            refreshHomeActionsOnly();
+        });
+
+        layoutQuickActions.addView(btnDa);
+        layoutQuickActions.addView(btnNe);
+
+        actionsScroll.setVisibility(View.VISIBLE);
+    }
+
+    private void showYesNoActionsForRepeatSubmit() {
+        clearQuickActions();
+
+        if (layoutQuickActions == null || actionsScroll == null) {
+            return;
+        }
+
+        Button btnDa = new Button(this);
+        btnDa.setText("Da");
+        btnDa.setAllCaps(false);
+        btnDa.setTextSize(14f);
+        btnDa.setTextColor(getResources().getColor(android.R.color.white));
+        btnDa.setBackgroundTintList(ColorStateList.valueOf(Color.BLACK));
+
+        LinearLayout.LayoutParams daParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        daParams.setMargins(8, 0, 8, 0);
+        btnDa.setLayoutParams(daParams);
+
+        btnDa.setOnClickListener(v -> {
+            clearQuickActions();
+
+            ChatMessage userMessage = new ChatMessage("Da", true);
+            adapter.addMessage(userMessage);
+            spremiPorukuUHistory(userMessage);
+            rvChat.scrollToPosition(messages.size() - 1);
+
+            if (!pendingItems.isEmpty()) {
+                posaljiNarudzbuDirektnoFirebase(new ArrayList<>(pendingItems));
+            }
+        });
+
+        Button btnNe = new Button(this);
+        btnNe.setText("Ne");
+        btnNe.setAllCaps(false);
+        btnNe.setTextSize(14f);
+        btnNe.setTextColor(getResources().getColor(android.R.color.white));
+        btnNe.setBackgroundTintList(ColorStateList.valueOf(Color.BLACK));
+
+        LinearLayout.LayoutParams neParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        neParams.setMargins(8, 0, 8, 0);
+        btnNe.setLayoutParams(neParams);
+
+        btnNe.setOnClickListener(v -> {
+            clearQuickActions();
+
+            ChatMessage userMessage = new ChatMessage("Ne", true);
+            adapter.addMessage(userMessage);
+            spremiPorukuUHistory(userMessage);
+            rvChat.scrollToPosition(messages.size() - 1);
+
+            ChatMessage aiMessage = new ChatMessage(
+                    "U redu, odustali smo od ponovnog slanja prošle narudžbe.",
+                    false
+            );
+            adapter.addMessage(aiMessage);
+            spremiPorukuUHistory(aiMessage);
+            rvChat.scrollToPosition(messages.size() - 1);
+
+            pendingAction = null;
+            pendingItems.clear();
+
+            refreshHomeActionsOnly();
+        });
+
+        layoutQuickActions.addView(btnDa);
+        layoutQuickActions.addView(btnNe);
+
+        actionsScroll.setVisibility(View.VISIBLE);
+    }
+
+    private void posaljiNarudzbuDirektnoFirebase(ArrayList<String> stavkeZaSlanje) {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        String userId = currentUser != null ? currentUser.getUid() : null;
+        String currentUserId = currentUser != null ? currentUser.getUid() : null;
+
+        if (currentUserId == null) {
+            Toast.makeText(
+                    ChatActivity.this,
+                    "Korisnik nije prijavljen. Pokušajte ponovno.",
+                    Toast.LENGTH_SHORT
+            ).show();
+            refreshHomeActionsOnly();
+            return;
+        }
+
+        if (stavkeZaSlanje == null || stavkeZaSlanje.isEmpty()) {
+            Toast.makeText(
+                    ChatActivity.this,
+                    "Nema stavki za slanje.",
+                    Toast.LENGTH_SHORT
+            ).show();
+            refreshHomeActionsOnly();
+            return;
+        }
+
+        DatabaseReference databaseRef = FirebaseDatabase.getInstance().getReference();
+        DatabaseReference narudzbeRef = databaseRef.child("narudzbe");
+        DatabaseReference counterRef = databaseRef.child("SVEUKUPNO_IZDANO_NARUDZBI");
+
+        String restaurant = getIntent().getStringExtra("restaurant");
+        String qrToken = getIntent().getStringExtra("qrToken");
+        String konobar = getIntent().getStringExtra("selectedUser");
+        int tableNumber = getIntent().getIntExtra("tableNumber", -1);
+
+        if (tableNumber == -1) {
+            Toast.makeText(
+                    ChatActivity.this,
+                    "Broj stola nedostaje.",
+                    Toast.LENGTH_SHORT
+            ).show();
+            refreshHomeActionsOnly();
+            return;
+        }
+
+        ChatMessage loadingMessage = new ChatMessage("Šaljem narudžbu u kuhinju...", false);
+        adapter.addMessage(loadingMessage);
+        spremiPorukuUHistory(loadingMessage);
+        rvChat.scrollToPosition(messages.size() - 1);
+
+        counterRef.runTransaction(new Transaction.Handler() {
+            @NonNull
+            @Override
+            public Transaction.Result doTransaction(@NonNull MutableData currentData) {
+                Integer currentCounter = currentData.getValue(Integer.class);
+                if (currentCounter == null) {
+                    currentCounter = 0;
+                }
+                currentData.setValue(currentCounter + 1);
+                return Transaction.success(currentData);
+            }
+
+            @Override
+            public void onComplete(@Nullable DatabaseError error,
+                                   boolean committed,
+                                   @Nullable DataSnapshot currentData) {
+                if (!(committed && currentData != null && currentData.getValue(Integer.class) != null)) {
+                    ChatMessage errorMessage = new ChatMessage(
+                            "Dogodila se greška pri slanju narudžbe.",
+                            false
+                    );
+                    adapter.addMessage(errorMessage);
+                    spremiPorukuUHistory(errorMessage);
+                    rvChat.scrollToPosition(messages.size() - 1);
+                    refreshHomeActionsOnly();
+                    return;
+                }
+
+                int newCounter = currentData.getValue(Integer.class);
+                String noviKljuc = String.format(Locale.getDefault(), "Narudzba_%03d", newCounter);
+
+                Map<String, Object> narudzba = new HashMap<>();
+                narudzba.put("stavke", stavkeZaSlanje);
+                narudzba.put("vrijeme",
+                        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date()));
+                narudzba.put("createdAt", System.currentTimeMillis());
+                narudzba.put("lastUpdated", System.currentTimeMillis());
+                narudzba.put("konobar", konobar);
+                narudzba.put("brojStola", tableNumber);
+                narudzba.put("restaurant", restaurant);
+                narudzba.put("qrToken", qrToken);
+                narudzba.put("userId", currentUserId);
+                narudzba.put("status", "Narudžba zaprimljena");
+                narudzba.put("korak", 1);
+                narudzba.put("ukupnoKoraka", 4);
+                narudzba.put("napomenaZaGosta", "Kuhinja je zaprimila vašu narudžbu");
+
+                narudzbeRef.child(noviKljuc).setValue(narudzba).addOnCompleteListener(task -> {
+                    pendingAction = null;
+                    pendingItems.clear();
+
+                    if (task.isSuccessful()) {
+                        ChatMessage doneMessage = new ChatMessage(
+                                "Narudžba je uspješno poslana u kuhinju.",
+                                false
+                        );
+                        adapter.addMessage(doneMessage);
+                        spremiPorukuUHistory(doneMessage);
+                        rvChat.scrollToPosition(messages.size() - 1);
+
+                        refreshHomeActionsOnly();
+                    } else {
+                        ChatMessage errorMessage = new ChatMessage(
+                                "Dogodila se greška pri slanju narudžbe.",
+                                false
+                        );
+                        adapter.addMessage(errorMessage);
+                        spremiPorukuUHistory(errorMessage);
+                        rvChat.scrollToPosition(messages.size() - 1);
+
+                        refreshHomeActionsOnly();
+                    }
+                });
+            }
+        });
+    }
+
+    private Map<String, Object> buildBasePayload() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String currentUserId = currentUser != null ? currentUser.getUid() : null;
 
         SharedPreferences prefs = getSharedPreferences("user_data", MODE_PRIVATE);
         String nickname = prefs.getString("nickname", "Gost");
@@ -367,77 +1037,107 @@ public class ChatActivity extends AppCompatActivity {
         String qrToken = getIntent().getStringExtra("qrToken");
 
         Map<String, Object> data = new HashMap<>();
-        data.put("message", userText);
-        data.put("userId", userId);
+        data.put("userId", currentUserId);
         data.put("nickname", nickname);
         data.put("tableNumber", tableNumber);
         data.put("restaurant", restaurant);
         data.put("qrToken", qrToken);
         data.put("history", buildChatHistory());
 
-        Log.d("CHAT_FN", "Sending chat payload: " + data);
+        return data;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void sendActionToAI(String actionId, String visibleLabel) {
+        Map<String, Object> data = buildBasePayload();
+        data.put("message", "");
+        data.put("action", actionId);
+
+        Log.d("CHAT_FN", "Sending action payload: " + data);
 
         btnSend.setEnabled(false);
 
         int loadingPosition = adapter.addLoadingMessage();
         rvChat.scrollToPosition(messages.size() - 1);
 
-        functions
-                .getHttpsCallable("chatWaiter")
+        functions.getHttpsCallable("chatWaiter")
                 .call(data)
                 .addOnSuccessListener(result -> {
                     btnSend.setEnabled(true);
-
                     adapter.removeMessage(loadingPosition);
+
                     pendingAction = null;
-                    pendingRepeatItems.clear();
-                    Map<String, Object> response =
-                            (Map<String, Object>) result.getData();
+                    pendingItems.clear();
 
-                    String answer = null;
-                    String action = null;
-                    ArrayList<String> repeatItems = new ArrayList<>();
-
-                    if (response != null) {
-                        answer = (String) response.get("answer");
-                        action = (String) response.get("action");
-                        Log.d("CHAT_FN", "Response: " + response.toString());
-
-                        Object repeatItemsObj = response.get("repeatItems");
-                        if (repeatItemsObj instanceof List<?>) {
-                            for (Object item : (List<?>) repeatItemsObj) {
-                                if (item instanceof String) {
-                                    repeatItems.add((String) item);
-                                }
-                            }
-                        }
-                    }
-
-                    if (answer == null || answer.isEmpty()) {
-                        answer = getString(R.string.chat_no_response);
-                    }
-
-                    ChatMessage aiMessage = new ChatMessage(answer, false);
-                    adapter.addMessage(aiMessage);
-                    spremiPorukuUHistory(aiMessage);
-                    rvChat.scrollToPosition(messages.size() - 1);
-
-                    if ("repeat_last_order".equals(action) && !repeatItems.isEmpty()) {
-                        pendingAction = "repeat_last_order";
-                        pendingRepeatItems.clear();
-                        pendingRepeatItems.addAll(repeatItems);
-                    } else {
-                        pendingAction = null;
-                        pendingRepeatItems.clear();
-                    }
+                    ParsedResponse parsed = parseResponse(result.getData());
+                    applyResponse(parsed);
                 })
                 .addOnFailureListener(e -> {
                     btnSend.setEnabled(true);
-
                     adapter.removeMessage(loadingPosition);
 
                     pendingAction = null;
-                    pendingRepeatItems.clear();
+                    pendingItems.clear();
+                    clearQuickActions();
+
+                    String msg = e.getMessage();
+
+                    if (e instanceof FirebaseFunctionsException) {
+                        FirebaseFunctionsException ffe = (FirebaseFunctionsException) e;
+                        FirebaseFunctionsException.Code code = ffe.getCode();
+                        Object details = ffe.getDetails();
+
+                        msg = getString(
+                                R.string.chat_error_functions,
+                                code.toString(),
+                                ffe.getMessage(),
+                                details != null ? details.toString() : getString(R.string.chat_null)
+                        );
+
+                        Log.e("CHAT_FN", msg, e);
+                    } else {
+                        Log.e("CHAT_FN", "Non-functions error: " + e.getMessage(), e);
+                    }
+
+                    ChatMessage errorMessage = new ChatMessage(msg, false);
+                    adapter.addMessage(errorMessage);
+                    spremiPorukuUHistory(errorMessage);
+                    rvChat.scrollToPosition(messages.size() - 1);
+                });
+    }
+
+    private void sendToAI(String userText) {
+        Map<String, Object> data = buildBasePayload();
+        data.put("message", userText);
+        data.put("action", "");
+
+        Log.d("CHAT_FN", "Sending chat payload: " + data);
+
+        btnSend.setEnabled(false);
+        clearQuickActions();
+
+        int loadingPosition = adapter.addLoadingMessage();
+        rvChat.scrollToPosition(messages.size() - 1);
+
+        functions.getHttpsCallable("chatWaiter")
+                .call(data)
+                .addOnSuccessListener(result -> {
+                    btnSend.setEnabled(true);
+                    adapter.removeMessage(loadingPosition);
+
+                    pendingAction = null;
+                    pendingItems.clear();
+
+                    ParsedResponse parsed = parseResponse(result.getData());
+                    applyResponse(parsed);
+                })
+                .addOnFailureListener(e -> {
+                    btnSend.setEnabled(true);
+                    adapter.removeMessage(loadingPosition);
+
+                    pendingAction = null;
+                    pendingItems.clear();
+                    clearQuickActions();
 
                     String msg = e.getMessage();
 
