@@ -86,6 +86,64 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
+    private String formatDisplayItem(String raw) {
+        if (raw == null) return "";
+
+        String trimmed = raw.trim();
+
+        // Formatiraj SAMO ako tekst izgleda kao stvarna stavka narudžbe
+        boolean looksLikeOrderItem =
+                trimmed.matches(".*\\(X\\d+\\)$");
+
+        if (!looksLikeOrderItem) {
+            return raw;
+        }
+
+        try {
+            int quantity = 1;
+
+            int start = trimmed.lastIndexOf("(X");
+            int end = trimmed.lastIndexOf(")");
+            if (start != -1 && end != -1) {
+                quantity = Integer.parseInt(trimmed.substring(start + 2, end));
+            }
+
+            String base = trimmed;
+
+            if (start != -1) {
+                base = base.substring(0, start).trim();
+            }
+
+            if (base.contains("MODIFIKACIJE:")) {
+                String[] parts = base.split("MODIFIKACIJE:");
+                String item = parts[0].replace("-", "").trim();
+                String mods = parts.length > 1 ? parts[1].trim() : "";
+
+                return quantity + "x " + capitalize(item + " " + mods);
+            }
+
+            return quantity + "x " + capitalize(base);
+
+        } catch (Exception e) {
+            return raw;
+        }
+    }
+
+    private String capitalize(String text) {
+        if (text == null || text.isEmpty()) return text;
+
+        String[] words = text.toLowerCase().split(" ");
+        StringBuilder result = new StringBuilder();
+
+        for (String w : words) {
+            if (w.isEmpty()) continue;
+            result.append(Character.toUpperCase(w.charAt(0)))
+                    .append(w.substring(1))
+                    .append(" ");
+        }
+
+        return result.toString().trim();
+    }
     // =========================
 
     static class UserVH extends RecyclerView.ViewHolder {
@@ -101,7 +159,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
-    static class BotVH extends RecyclerView.ViewHolder {
+    class BotVH extends RecyclerView.ViewHolder {
         TextView tvMessage;
 
         BotVH(@NonNull View itemView) {
@@ -110,7 +168,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
 
         void bind(String text) {
-            tvMessage.setText(text);
+            tvMessage.setText(formatDisplayItem(text));
         }
     }
 }
