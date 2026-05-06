@@ -199,9 +199,28 @@ const availableNames = buildMenuNameSet(foods, drinks);
 const unrecognized = Array.isArray(parsed.unrecognized)
   ? parsed.unrecognized.map((x) => x.toString().trim()).filter(Boolean)
   : [];
+
+  const resolvedFromUnrecognized = resolveUnrecognizedItems(
+    unrecognized,
+    foods,
+    drinks
+  );
+
+  const allParsedItems = [
+    ...parsedItems,
+    ...resolvedFromUnrecognized,
+  ];
+
+ const resolvedOriginalTexts = new Set(
+   resolvedFromUnrecognized.map((item) => normalizeText(item.originalText))
+ );
+
+ const finalUnrecognized = unrecognized.filter((item) =>
+   !resolvedOriginalTexts.has(normalizeText(item))
+ );
    return {
-     unrecognized,
-     items: parsedItems
+     unrecognized: finalUnrecognized,
+     items: allParsedItems
        .filter((item) => item?.name && availableNames.has(item.name))
        .map((item) => {
         const quantity = Number(item.quantity || 1);
@@ -944,6 +963,37 @@ function buildMenuParserItems(foods, drinks, modifications = {}) {
       aliases: item.aliasi || [],
       modifications: Object.values(modifications[item.name] || {}),
     }));
+}
+
+function resolveUnrecognizedItems(unrecognized, foods, drinks) {
+  const menu = [...foods, ...drinks];
+
+  return unrecognized.flatMap((raw) => {
+    const text = normalizeText(raw);
+
+    const matches = menu.filter((item) => {
+      const name = normalizeText(item.name || "");
+      const aliases = Array.isArray(item.aliasi) ? item.aliasi : [];
+
+      return (
+        name.includes(text) ||
+        text.includes(name) ||
+        aliases.some((a) => normalizeText(a) === text)
+      );
+    });
+
+    if (matches.length === 1) {
+    return [{
+      originalText: raw,
+      name: matches[0].name,
+      quantity: 1,
+      modifications: [],
+      note: "",
+    }];
+    }
+
+    return [];
+  });
 }
 
 function buildAllMenuNames(foods, drinks) {
