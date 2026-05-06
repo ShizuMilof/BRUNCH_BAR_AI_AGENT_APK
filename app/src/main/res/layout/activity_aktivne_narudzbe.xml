@@ -13,7 +13,6 @@
         android:layout_marginTop="12dp"
         android:background="@android:color/transparent"
         android:src="@android:drawable/ic_media_previous"
-        android:tint="@android:color/white"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -21,7 +20,7 @@
         android:id="@+id/txtTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Aktivne narudžbe"
+        android:text="Moje aktivne narudžbe"
         android:textColor="@android:color/white"
         android:textSize="22sp"
         android:textStyle="bold"

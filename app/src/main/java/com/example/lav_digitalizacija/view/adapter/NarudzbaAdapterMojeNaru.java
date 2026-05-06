@@ -13,7 +13,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.lav_digitalizacija.R;
-import com.example.lav_digitalizacija.view.activity.PregledMojihNarudzbiActivity;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -91,9 +90,7 @@ public class NarudzbaAdapterMojeNaru extends RecyclerView.Adapter<NarudzbaAdapte
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(context, R.string.order_deleted_success, Toast.LENGTH_SHORT).show();
 
-                    if (context instanceof PregledMojihNarudzbiActivity) {
-                        ((PregledMojihNarudzbiActivity) context).reloadNarudzbe();
-                    }
+
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(context, R.string.order_delete_error, Toast.LENGTH_SHORT).show()

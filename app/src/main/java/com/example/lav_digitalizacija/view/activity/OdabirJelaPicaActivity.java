@@ -21,6 +21,7 @@ import com.example.lav_digitalizacija.R;
 import com.example.lav_digitalizacija.model.MenuItem;
 import com.example.lav_digitalizacija.view.adapter.MenuItemAdapter;
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -190,11 +191,12 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
             int tableNumber = getIntent().getIntExtra("tableNumber", -1);
             String restaurant = getIntent().getStringExtra("restaurant");
             String qrToken = getIntent().getStringExtra("qrToken");
-
+            String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
             Intent intent = new Intent(OdabirJelaPicaActivity.this, AktivneNarudzbeActivity.class);
             intent.putExtra("tableNumber", tableNumber);
             intent.putExtra("restaurant", restaurant);
             intent.putExtra("qrToken", qrToken);
+            intent.putExtra("selectedUserId", userId);
             startActivity(intent);
         });
 
