@@ -697,7 +697,8 @@ public class ChatActivity extends AppCompatActivity {
         }
 
         if (("recommendation_added".equals(type)
-                || "menu_item_added".equals(type))
+                || "menu_item_added".equals(type)
+                || "chat_order_added".equals(type))
                 && parsed.items != null
                 && !parsed.items.isEmpty()) {
             dodajStavkeUKosaricuBezOtvaranja(new ArrayList<>(parsed.items));
@@ -1043,6 +1044,19 @@ public class ChatActivity extends AppCompatActivity {
         data.put("restaurant", restaurant);
         data.put("qrToken", qrToken);
         data.put("history", buildChatHistory());
+        SharedPreferences cartPrefs = getSharedPreferences("narudzba", MODE_PRIVATE);
+        String cartJson = cartPrefs.getString("narudzbe", "[]");
+
+        Type cartType = new TypeToken<ArrayList<String>>() {
+        }.getType();
+        ArrayList<String> cartItems = new Gson().fromJson(cartJson, cartType);
+
+        if (cartItems == null) {
+            cartItems = new ArrayList<>();
+        }
+
+        data.put("cartItems", cartItems);
+
 
         return data;
     }

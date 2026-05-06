@@ -31,7 +31,6 @@
         <activity android:name=".view.activity.OdabirJelaPicaActivity" />
         <activity android:name=".view.activity.ModifikacijeActivity" />
         <activity android:name=".view.activity.PregledNarudzbiActivity" />
-        <activity android:name=".view.activity.PregledMojihNarudzbiActivity" />
         <activity android:name=".view.activity.ChatActivity" />
         <activity android:name=".view.activity.PracenjeNarudzbeActivity" />
         <activity android:name=".view.activity.AktivneNarudzbeActivity" />

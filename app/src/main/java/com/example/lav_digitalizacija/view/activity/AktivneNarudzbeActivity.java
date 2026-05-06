@@ -2,6 +2,7 @@ package com.example.lav_digitalizacija.view.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
@@ -34,6 +35,9 @@ public class AktivneNarudzbeActivity extends AppCompatActivity {
     private TextView txtPrazno;
     private ImageButton btnBack;
 
+    private DatabaseReference narudzbeRef;
+    private ValueEventListener narudzbeListener;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,14 +55,14 @@ public class AktivneNarudzbeActivity extends AppCompatActivity {
         btnBack = findViewById(R.id.btnBack);
 
         aktivneNarudzbeList = new ArrayList<>();
+
         adapter = new AktivneNarudzbeAdapter(aktivneNarudzbeList, narudzba -> {
             Intent intent = new Intent(AktivneNarudzbeActivity.this, PracenjeNarudzbeActivity.class);
             intent.putExtra("narudzbaId", narudzba.getNarudzbaId());
-
             intent.putExtra("tableNumber", getIntent().getIntExtra("tableNumber", -1));
             intent.putExtra("restaurant", getIntent().getStringExtra("restaurant"));
             intent.putExtra("qrToken", getIntent().getStringExtra("qrToken"));
-
+            intent.putExtra("selectedUserId", getIntent().getStringExtra("selectedUserId"));
             startActivity(intent);
         });
 
@@ -67,81 +71,90 @@ public class AktivneNarudzbeActivity extends AppCompatActivity {
 
         btnBack.setOnClickListener(v -> finish());
 
-        ucitajAktivneNarudzbe();
+        slusajAktivneNarudzbe();
     }
 
-    private void ucitajAktivneNarudzbe() {
-        int tableNumber = getIntent().getIntExtra("tableNumber", -1);
-        String qrToken = getIntent().getStringExtra("qrToken");
+    private void slusajAktivneNarudzbe() {
+        String selectedUserId = getIntent().getStringExtra("selectedUserId");
 
-        if (tableNumber == -1) {
-            Toast.makeText(this, "Nedostaje broj stola", Toast.LENGTH_SHORT).show();
+        if (selectedUserId == null || selectedUserId.trim().isEmpty()) {
+            Toast.makeText(this, "Nedostaje userId", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
-        progressBar.setVisibility(ProgressBar.VISIBLE);
-        txtPrazno.setVisibility(TextView.GONE);
+        progressBar.setVisibility(View.VISIBLE);
+        txtPrazno.setVisibility(View.GONE);
 
-        DatabaseReference narudzbeRef = FirebaseDatabase.getInstance().getReference("narudzbe");
+        narudzbeRef = FirebaseDatabase.getInstance().getReference("narudzbe");
 
-        narudzbeRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                progressBar.setVisibility(ProgressBar.GONE);
-                aktivneNarudzbeList.clear();
+        narudzbeListener = narudzbeRef
+                .orderByChild("userId")
+                .equalTo(selectedUserId)
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        progressBar.setVisibility(View.GONE);
+                        aktivneNarudzbeList.clear();
 
-                for (DataSnapshot narudzbaSnapshot : snapshot.getChildren()) {
-                    String narudzbaId = narudzbaSnapshot.getKey();
+                        for (DataSnapshot narudzbaSnapshot : snapshot.getChildren()) {
+                            String narudzbaId = narudzbaSnapshot.getKey();
 
-                    Integer brojStola = narudzbaSnapshot.child("brojStola").getValue(Integer.class);
-                    String status = narudzbaSnapshot.child("status").getValue(String.class);
-                    String firebaseQrToken = narudzbaSnapshot.child("qrToken").getValue(String.class);
-                    String vrijeme = narudzbaSnapshot.child("vrijeme").getValue(String.class);
+                            Integer brojStola = narudzbaSnapshot.child("brojStola").getValue(Integer.class);
+                            String status = narudzbaSnapshot.child("status").getValue(String.class);
+                            String vrijeme = narudzbaSnapshot.child("vrijeme").getValue(String.class);
 
-                    boolean istiStol = brojStola != null && brojStola == tableNumber;
-                    boolean istiQr = qrToken == null || qrToken.equals(firebaseQrToken);
-                    boolean aktivna = status != null
-                            && !status.equals("Dostavljeno")
-                            && !status.equals("Otkazano");
+                            boolean aktivna = status != null
+                                    && !status.equals("Dostavljeno")
+                                    && !status.equals("Otkazano");
 
-                    if (istiStol && istiQr && aktivna) {
-                        List<String> stavke = new ArrayList<>();
-                        for (DataSnapshot stavkaSnapshot : narudzbaSnapshot.child("stavke").getChildren()) {
-                            String stavka = stavkaSnapshot.getValue(String.class);
-                            if (stavka != null) {
-                                stavke.add(stavka);
+                            if (aktivna) {
+                                List<String> stavke = new ArrayList<>();
+
+                                for (DataSnapshot stavkaSnapshot : narudzbaSnapshot.child("stavke").getChildren()) {
+                                    String stavka = stavkaSnapshot.getValue(String.class);
+                                    if (stavka != null) {
+                                        stavke.add(stavka);
+                                    }
+                                }
+
+                                AktivnaNarudzbaModel model = new AktivnaNarudzbaModel(
+                                        narudzbaId,
+                                        brojStola != null ? brojStola : -1,
+                                        status,
+                                        vrijeme,
+                                        stavke
+                                );
+
+                                aktivneNarudzbeList.add(model);
                             }
                         }
 
-                        AktivnaNarudzbaModel model = new AktivnaNarudzbaModel(
-                                narudzbaId,
-                                brojStola,
-                                status,
-                                vrijeme,
-                                stavke
+                        adapter.notifyDataSetChanged();
+
+                        txtPrazno.setVisibility(
+                                aktivneNarudzbeList.isEmpty() ? View.VISIBLE : View.GONE
                         );
-
-                        aktivneNarudzbeList.add(model);
                     }
-                }
 
-                adapter.notifyDataSetChanged();
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        progressBar.setVisibility(View.GONE);
+                        Toast.makeText(
+                                AktivneNarudzbeActivity.this,
+                                "Greška pri učitavanju narudžbi",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+                });
+    }
 
-                if (aktivneNarudzbeList.isEmpty()) {
-                    txtPrazno.setVisibility(TextView.VISIBLE);
-                } else {
-                    txtPrazno.setVisibility(TextView.GONE);
-                }
-            }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                progressBar.setVisibility(ProgressBar.GONE);
-                Toast.makeText(AktivneNarudzbeActivity.this,
-                        "Greška pri učitavanju narudžbi",
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
+        if (narudzbeRef != null && narudzbeListener != null) {
+            narudzbeRef.removeEventListener(narudzbeListener);
+        }
     }
 }
