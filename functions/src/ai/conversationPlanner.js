@@ -85,6 +85,9 @@ Pravila:
 - "što imaš od sendviča" => category_question, category "sendvič"
 - "što imaš od salata" => category_question, category "salata"
 - "daj mi pizzu" => clarify_order, category "pizza", needsClarification true
+- "hoću tost" => clarify_order, category "tost", needsClarification true
+- "daj mi tost" => clarify_order, category "tost", needsClarification true
+
 - "hoću sendvič" => clarify_order, category "sendvič", needsClarification true
 - "ovaj put bi samo sendvič" => clarify_order, category "sendvič", needsClarification true
 - "dodaj jednu koka kolu" => add_to_cart, items name "koka kola", quantity 1

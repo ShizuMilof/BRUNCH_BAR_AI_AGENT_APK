@@ -30,6 +30,15 @@ function getItemsForMealPart(part, foods, drinks) {
     );
   }
 
+  if (normalizedPart === "tost") {
+    return sortByPopularity(foods).filter((item) => {
+      const category = normalizeText(item.category || "");
+      const name = normalizeText(item.name || "");
+
+      return category === "tost" || name.includes("tost");
+    });
+  }
+
   if (normalizedPart === "pice") {
     return sortByPopularity(drinks).filter((item) => {
       const category = normalizeText(item.category || "");
@@ -169,6 +178,7 @@ function getMealPartLabel(part) {
     salata: "salatu",
     desert: "desert",
     sendvic: "sendvič",
+    tost: "tost",
   };
 
   return labels[part] || part;

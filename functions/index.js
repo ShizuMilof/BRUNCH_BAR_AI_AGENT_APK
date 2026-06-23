@@ -265,7 +265,11 @@ if (text.includes("desert") || text.includes("kolac") || text.includes("kolač")
     if (text.includes("pizza") || text.includes("pizzu")) return "pizza";
     if (text.includes("sendvic") || text.includes("sendvič")) return "sendvic";
     if (text.includes("kava") || text.includes("kavu") || text.includes("espresso")) return "kava";
-
+if (
+    text.includes("tost") ||
+    text.includes("tostove") ||
+    text.includes("tostova")
+) return "tost";
     return "";
 }
 
@@ -1110,6 +1114,7 @@ if (
 
             const requestedMenuPart = getRequestedMenuPart(message);
 
+
             const genericCategoryWords = [
                 "zelim", "želim", "daj", "dodaj", "mi", "molim", "hocu", "hoću",
                 "pizzu", "pizza", "pizze",
@@ -1119,6 +1124,7 @@ if (
                 "kavu", "kava",
                 "meso", "mesno", "glavno",
                 "sok", "pice", "piće",
+                "tost", "tostove", "tostova",
             ];
 
             const isGenericCategoryRequest =
@@ -1268,18 +1274,23 @@ if (
               drinks,
           );
 
-        if (
-            message &&
-            !action &&
-            exactMenuItems.length > 1 &&
-            !mealContext.plan &&
-            !isGenericCategoryRequest
-        ) {
-            const itemNames = exactMenuItems.map((item) => item.name);
+       if (
+           message &&
+           !action &&
+           exactMenuItems.length > 1 &&
+           !mealContext.plan &&
+           !isGenericCategoryRequest
+       ) {
+           console.log(
+               "EXACT MENU ITEMS:",
+               exactMenuItems.map((item) => item.name)
+           );
 
-            return buildResponse(
-                "ask_quantity",
-                `${nickname}, koliko komada želiš za ${itemNames[0]}?`,
+           const itemNames = exactMenuItems.map((item) => item.name);
+
+           return buildResponse(
+               "ask_quantity",
+               `${nickname}, koliko komada želiš za ${itemNames[0]}?`,
                 [],
                 [],
                 {

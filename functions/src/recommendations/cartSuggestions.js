@@ -75,6 +75,10 @@ function getProfileFromItems(rawItems, foods, drinks) {
   };
 }
 
+function shuffle(items) {
+  return [...(items || [])].sort(() => Math.random() - 0.5);
+}
+
 function getPopularFoodByRoleOrTag(foods, options = {}) {
   const {
     role = "",
@@ -82,7 +86,7 @@ function getPopularFoodByRoleOrTag(foods, options = {}) {
     limit = 3,
   } = options;
 
-  return (foods || [])
+  const pool = (foods || [])
       .filter((item) => item && item.dostupno !== false)
       .filter((item) => {
         if (role && normalizeText(item.mealRole || "") !== normalizeText(role)) {
@@ -96,14 +100,20 @@ function getPopularFoodByRoleOrTag(foods, options = {}) {
         return true;
       })
       .sort((a, b) => (b.popularnost || 0) - (a.popularnost || 0))
+      .slice(0, Math.max(limit * 3, limit));
+
+  return shuffle(pool)
       .slice(0, limit)
       .map((item) => item.name);
 }
 
 function getPopularDrinks(drinks, limit = 3) {
-  return (drinks || [])
+  const pool = (drinks || [])
       .filter((item) => item && item.dostupno !== false)
       .sort((a, b) => (b.popularnost || 0) - (a.popularnost || 0))
+      .slice(0, Math.max(limit * 3, limit));
+
+  return shuffle(pool)
       .slice(0, limit)
       .map((item) => item.name);
 }
@@ -169,6 +179,9 @@ function buildCartBasedSuggestions({
   return removeAlreadySelectedSuggestions(suggestions, allItems).slice(0, limit);
 }
 
+function shuffle(items) {
+  return [...(items || [])].sort(() => Math.random() - 0.5);
+}
 
 function buildCartBasedSuggestionsText(suggestions) {
   if (!suggestions || !suggestions.length) return "";
