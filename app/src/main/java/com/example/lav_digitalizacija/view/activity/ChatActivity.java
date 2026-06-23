@@ -24,6 +24,7 @@ import com.example.lav_digitalizacija.R;
 import com.example.lav_digitalizacija.model.ChatMessage;
 import com.example.lav_digitalizacija.view.adapter.ChatAdapter;
 import com.google.common.reflect.TypeToken;
+import com.google.firebase.BuildConfig;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -65,6 +66,8 @@ public class ChatActivity extends AppCompatActivity {
     private final ArrayList<String> pendingItems = new ArrayList<>();
     private final List<ChatMessage> messages = new ArrayList<>();
 
+    private String activeMode = "";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -86,7 +89,10 @@ public class ChatActivity extends AppCompatActivity {
         }
 
         functions = FirebaseFunctions.getInstance("europe-west1");
-
+        if (BuildConfig.DEBUG) {
+            functions.useEmulator("10.0.2.2", 5001);
+        }
+        Log.d("CHAT_FN", "Using Functions emulator on 10.0.2.2:5001");
         adapter = new ChatAdapter(messages);
 
         LinearLayoutManager lm = new LinearLayoutManager(this);
@@ -98,30 +104,17 @@ public class ChatActivity extends AppCompatActivity {
         pendingItems.clear();
 
         ucitajZadnjePoruke();
+        etMessage.setEnabled(true);
+        etMessage.setHint("Napiši poruku...");
 
         btnSend.setOnClickListener(v -> {
             String text = etMessage.getText().toString().trim();
+
             if (text.isEmpty()) return;
+
 
             if (pendingAction != null) {
                 obradiPendingFlow(text);
-                return;
-            }
-
-            if (jePotvrda(text)) {
-                ChatMessage userMessage = new ChatMessage(text, true);
-                adapter.addMessage(userMessage);
-                spremiPorukuUHistory(userMessage);
-                rvChat.scrollToPosition(messages.size() - 1);
-                etMessage.setText("");
-
-                ChatMessage aiMessage = new ChatMessage(
-                        "Ako želiš da nešto dodam kroz chat, napiši što želiš naručiti ili odaberi neku ponuđenu opciju.",
-                        false
-                );
-                adapter.addMessage(aiMessage);
-                spremiPorukuUHistory(aiMessage);
-                rvChat.scrollToPosition(messages.size() - 1);
                 return;
             }
 
@@ -138,21 +131,20 @@ public class ChatActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
-        if (!messages.isEmpty()) {
-            refreshHomeActionsOnly();
-        }
+        clearQuickActions();
     }
 
     private void refreshHomeActionsOnly() {
         Map<String, Object> data = buildBasePayload();
         data.put("message", "");
         data.put("action", "open_home");
+        data.put("mode", activeMode);
 
         functions.getHttpsCallable("chatWaiter")
                 .call(data)
                 .addOnSuccessListener(result -> {
                     ParsedResponse parsed = parseResponse(result.getData());
+                    Log.d("CHAT_FN", "Home actions: " + parsed.actions);
                     showQuickActions(parsed.actions);
                 })
                 .addOnFailureListener(e -> Log.e("CHAT_FN", "Failed to refresh home actions", e));
@@ -307,7 +299,7 @@ public class ChatActivity extends AppCompatActivity {
 
                         if (!messages.isEmpty()) {
                             rvChat.scrollToPosition(messages.size() - 1);
-                            refreshHomeActionsOnly();
+                            clearQuickActions();
                         } else {
                             prikaziWelcomePorukuAkoTreba();
                         }
@@ -322,7 +314,13 @@ public class ChatActivity extends AppCompatActivity {
 
     private void prikaziWelcomePorukuAkoTreba() {
         if (messages.isEmpty()) {
-            sendActionToAI("open_home", "Početak");
+            ChatMessage welcome = new ChatMessage(
+                    "Bok, ja sam AI konobar. Napiši što želiš naručiti ili pitaj za prethodne narudžbe.",
+                    false
+            );
+
+            adapter.addMessage(welcome);
+            spremiPorukuUHistory(welcome);
         }
     }
 
@@ -344,57 +342,115 @@ public class ChatActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * private void showQuickActions(ArrayList<Map<String, String>> actions) {
+     * clearQuickActions();
+     * <p>
+     * actions = withHomeActions(actions);
+     * <p>
+     * if (actions == null || actions.isEmpty() || layoutQuickActions == null || actionsScroll == null) {
+     * return;
+     * }
+     * <p>
+     * for (Map<String, String> action : actions) {
+     * if (action == null) continue;
+     * <p>
+     * String actionId = action.get("id");
+     * String label = action.get("label");
+     * <p>
+     * if (actionId == null || label == null) continue;
+     * <p>
+     * Button button = new Button(this);
+     * button.setText(label);
+     * button.setAllCaps(false);
+     * button.setTextSize(14f);
+     * button.setTextColor(getResources().getColor(android.R.color.white));
+     * button.setBackgroundTintList(ColorStateList.valueOf(Color.BLACK));
+     * <p>
+     * LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+     * LinearLayout.LayoutParams.WRAP_CONTENT,
+     * LinearLayout.LayoutParams.WRAP_CONTENT
+     * );
+     * params.setMargins(8, 0, 8, 0);
+     * button.setLayoutParams(params);
+     * <p>
+     * button.setOnClickListener(v -> {
+     * ChatMessage userMessage = new ChatMessage(label, true);
+     * adapter.addMessage(userMessage);
+     * spremiPorukuUHistory(userMessage);
+     * rvChat.scrollToPosition(messages.size() - 1);
+     * <p>
+     * clearQuickActions();
+     * <p>
+     * if ("go_to_cart".equals(actionId)) {
+     * otvoriPregledNarudzbe();
+     * return;
+     * }
+     * <p>
+     * sendActionToAI(actionId, label);
+     * });
+     * <p>
+     * layoutQuickActions.addView(button);
+     * }
+     * <p>
+     * actionsScroll.setVisibility(View.VISIBLE);
+     * }
+     */
+
     private void showQuickActions(ArrayList<Map<String, String>> actions) {
         clearQuickActions();
+    }
 
-        actions = withHomeActions(actions);
+    private void sendModeToAI(String mode, String visibleLabel) {
+        Map<String, Object> data = buildBasePayload();
+        data.put("message", visibleLabel);
+        data.put("action", "");
+        data.put("mode", mode);
 
-        if (actions == null || actions.isEmpty() || layoutQuickActions == null || actionsScroll == null) {
-            return;
-        }
+        Log.d("CHAT_FN", "Sending mode payload: " + data);
 
-        for (Map<String, String> action : actions) {
-            if (action == null) continue;
+        btnSend.setEnabled(false);
 
-            String actionId = action.get("id");
-            String label = action.get("label");
+        int loadingPosition = adapter.addLoadingMessage();
+        rvChat.scrollToPosition(messages.size() - 1);
 
-            if (actionId == null || label == null) continue;
+        functions.getHttpsCallable("chatWaiter")
+                .call(data)
+                .addOnSuccessListener(result -> {
+                    btnSend.setEnabled(true);
+                    adapter.removeMessage(loadingPosition);
 
-            Button button = new Button(this);
-            button.setText(label);
-            button.setAllCaps(false);
-            button.setTextSize(14f);
-            button.setTextColor(getResources().getColor(android.R.color.white));
-            button.setBackgroundTintList(ColorStateList.valueOf(Color.BLACK));
+                    pendingAction = null;
+                    pendingItems.clear();
 
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-            );
-            params.setMargins(8, 0, 8, 0);
-            button.setLayoutParams(params);
+                    ParsedResponse parsed = parseResponse(result.getData());
+                    applyResponse(parsed);
+                })
+                .addOnFailureListener(e -> {
+                    btnSend.setEnabled(true);
+                    adapter.removeMessage(loadingPosition);
 
-            button.setOnClickListener(v -> {
-                ChatMessage userMessage = new ChatMessage(label, true);
-                adapter.addMessage(userMessage);
-                spremiPorukuUHistory(userMessage);
-                rvChat.scrollToPosition(messages.size() - 1);
+                    pendingAction = null;
+                    pendingItems.clear();
+                    clearQuickActions();
 
-                clearQuickActions();
+                    String msg = e.getMessage();
 
-                if ("go_to_cart".equals(actionId)) {
-                    otvoriPregledNarudzbe();
-                    return;
-                }
+                    if (e instanceof FirebaseFunctionsException) {
+                        FirebaseFunctionsException ffe = (FirebaseFunctionsException) e;
+                        msg = getString(
+                                R.string.chat_error_functions,
+                                ffe.getCode().toString(),
+                                ffe.getMessage(),
+                                ffe.getDetails() != null ? ffe.getDetails().toString() : getString(R.string.chat_null)
+                        );
+                    }
 
-                sendActionToAI(actionId, label);
-            });
-
-            layoutQuickActions.addView(button);
-        }
-
-        actionsScroll.setVisibility(View.VISIBLE);
+                    ChatMessage errorMessage = new ChatMessage(msg, false);
+                    adapter.addMessage(errorMessage);
+                    spremiPorukuUHistory(errorMessage);
+                    rvChat.scrollToPosition(messages.size() - 1);
+                });
     }
 
     private void otvoriPregledNarudzbe() {
@@ -591,7 +647,7 @@ public class ChatActivity extends AppCompatActivity {
     private ArrayList<Map<String, Object>> buildChatHistory() {
         ArrayList<Map<String, Object>> history = new ArrayList<>();
 
-        int endExclusive = Math.max(0, messages.size() - 1);
+        int endExclusive = messages.size();
         int start = Math.max(0, endExclusive - 15);
 
         for (int i = start; i < endExclusive; i++) {
@@ -600,6 +656,10 @@ public class ChatActivity extends AppCompatActivity {
             Map<String, Object> item = new HashMap<>();
             item.put("role", msg.isUser() ? "user" : "assistant");
             item.put("text", msg.getText());
+
+            if (msg.getMetadata() != null) {
+                item.put("metadata", msg.getMetadata());
+            }
 
             history.add(item);
         }
@@ -610,6 +670,7 @@ public class ChatActivity extends AppCompatActivity {
     private static class ParsedResponse {
         String message;
         String type;
+        Map<String, Object> metadata = new HashMap<>();
         ArrayList<String> items = new ArrayList<>();
         ArrayList<Map<String, String>> actions = new ArrayList<>();
     }
@@ -626,6 +687,16 @@ public class ChatActivity extends AppCompatActivity {
 
         parsed.message = (String) response.get("message");
         parsed.type = (String) response.get("type");
+
+        Object metadataObj = response.get("metadata");
+        if (metadataObj instanceof Map<?, ?>) {
+            parsed.metadata = new HashMap<>();
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) metadataObj).entrySet()) {
+                if (entry.getKey() instanceof String) {
+                    parsed.metadata.put((String) entry.getKey(), entry.getValue());
+                }
+            }
+        }
 
         Object itemsObj = response.get("items");
         if (itemsObj instanceof List<?>) {
@@ -665,6 +736,7 @@ public class ChatActivity extends AppCompatActivity {
         }
 
         ChatMessage aiMessage = new ChatMessage(message, false);
+        aiMessage.setMetadata(parsed.metadata);
         adapter.addMessage(aiMessage);
         spremiPorukuUHistory(aiMessage);
         rvChat.scrollToPosition(messages.size() - 1);
@@ -674,7 +746,9 @@ public class ChatActivity extends AppCompatActivity {
                 || "repeat_last_order_submit".equals(type)
                 || "repeat_last_order_to_cart".equals(type)
                 || "repeat_last_any_order_submit".equals(type)
-                || "repeat_last_any_order_to_cart".equals(type))
+                || "repeat_last_any_order_to_cart".equals(type)
+                || "repeat_history_order_submit".equals(type)
+                || "repeat_history_order_to_cart".equals(type))
                 && parsed.items != null
                 && !parsed.items.isEmpty()) {
 
@@ -686,19 +760,12 @@ public class ChatActivity extends AppCompatActivity {
             pendingItems.clear();
         }
 
-        if ("repeat_last_order_submit".equals(type)
-                || "repeat_last_any_order_submit".equals(type)) {
-            showYesNoActionsForRepeatSubmit();
-        } else if ("repeat_last_order_to_cart".equals(type)
-                || "repeat_last_any_order_to_cart".equals(type)) {
-            showYesNoActionsForRepeatToCart();
-        } else {
-            showQuickActions(parsed.actions);
-        }
+        clearQuickActions();
 
         if (("recommendation_added".equals(type)
                 || "menu_item_added".equals(type)
-                || "chat_order_added".equals(type))
+                || "chat_order_added".equals(type)
+                || "history_order_filtered".equals(type))
                 && parsed.items != null
                 && !parsed.items.isEmpty()) {
             dodajStavkeUKosaricuBezOtvaranja(new ArrayList<>(parsed.items));
@@ -1066,6 +1133,7 @@ public class ChatActivity extends AppCompatActivity {
         Map<String, Object> data = buildBasePayload();
         data.put("message", "");
         data.put("action", actionId);
+        data.put("mode", activeMode);
 
         Log.d("CHAT_FN", "Sending action payload: " + data);
 
@@ -1124,6 +1192,7 @@ public class ChatActivity extends AppCompatActivity {
         Map<String, Object> data = buildBasePayload();
         data.put("message", userText);
         data.put("action", "");
+        data.put("mode", activeMode);
 
         Log.d("CHAT_FN", "Sending chat payload: " + data);
 

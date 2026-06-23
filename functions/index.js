@@ -1,2100 +1,2483 @@
 /* eslint-disable max-len */
+/* eslint-disable require-jsdoc */
+/* eslint-disable no-unused-vars */
+const {
+    normalizeText,
+    normalizeArray,
+    filterAvailable,
+    sortByName,
+} = require("./src/utils/normalize");
+
+const {
+    isMealBuilderIntent,
+    buildMealSuggestion,
+} = require("./src/mealBuilder/mealBuilder");
+
+const {
+    isMealBuilderPlanStart,
+    createMealBuilderPlan,
+    getLastMealBuilderPlan,
+    getCurrentMealPart,
+    advanceMealBuilderPlan,
+    isMealPlanFinished,
+    getLastMealBuilderContext,
+} = require("./src/mealBuilder/mealBuilderState");
+
+const {
+    buildMealPartQuestion,
+    getItemsForMealPart,
+} = require("./src/mealBuilder/mealBuilderResponses");
+
+const {
+    buildAfterOrderSuggestions,
+    buildAfterOrderSuggestionsText,
+} = require("./src/recommendations/afterOrderSuggestions");
+
+const {
+    buildCartBasedSuggestions,
+    buildCartBasedSuggestionsText,
+} = require("./src/recommendations/cartSuggestions");
+
+const {
+    buildPairingRecommendationResponse,
+} = require("./src/recommendations/pairingRecommendations");
+
+const {
+    isAskingCoffeePairing,
+    isAskingLightFood,
+    isAskingHealthyFood,
+    isHungryIntent,
+} = require("./src/intents/contextRecommendationIntents");
+
+const {
+    isConfirmSuggestedItemIntent,
+    getSuggestedItemIndexFromMessage,
+    resolveSuggestedItemFromMessage,
+} = require("./src/intents/suggestionIntents");
+
+const {
+    getLastSuggestedItems,
+} = require("./src/history/suggestionHistory");
+
+const {
+    handleOrderingIntent,
+} = require("./src/chat/chatOrdering");
+
+const {
+    findMenuItemByName,
+    findMenuItemFromMessage,
+    getRecommendationCategoryFromMessage,
+    getRecommendationCategoryLabel,
+    getRecommendedItemsByCategory,
+    menuItemMatchesRecommendationCategory,
+    filterNamesByCategory,
+    getItemsByTag
+} = require("./src/menu/menuLookup");
+
+const {
+    getPopularRecommendationsByCategory,
+    getPersonalRecommendationsByCategory,
+    getFallbackRecommendationsByCategory,
+    getSmartRecommendationsByCategory,
+    extractPopularItemNames,
+} = require("./src/compose/composeRecommendations");
+
+const {
+    isAskingDrinksWithAllergens,
+} = require("./src/menu/allergenHelpers");
+
+const {
+    isAskingAboutLastOrder,
+} = require("./src/history/historyHelpers");
+
+const {
+    encodeRepeatItem,
+    decodeRepeatItem,
+    extractRequestedQuantity,
+    replaceItemQuantity,
+    isRepeatDisplayedOrderIntent,
+    getLastDisplayedOrderItemsFromHistory,
+    getLastSelectedRepeatItem,
+    isQuantityCorrectionIntent,
+} = require("./src/repeat/repeatHelpers");
+
+const {
+    getFoodPreferencesFromMessage,
+    itemMatchesPreferences,
+} = require("./src/compose/composePreferences");
+
+const {
+    planConversation,
+} = require("./src/ai/conversationPlanner");
+
+const {
+    resolveRequestedItems,
+} = require("./src/menu/itemResolver");
+
+const {
+    parseOrderFromMessage,
+    buildMenuNameSet,
+} = require("./src/ai/orderParser");
+
+const {
+    extractBaseItemName,
+    extractNote,
+    getOrderItems,
+    sortOrdersByCreatedAtDesc,
+} = require("./src/orders/orderHelpers");
+
+const {
+    buildAction,
+    buildMainActions,
+    buildDefaultInfoActions,
+} = require("./src/responses/actions");
+
+const {
+    buildResponse,
+    buildHomeResponse,
+} = require("./src/responses/builders");
+
+const {
+    buildCategoryRecommendations,
+    countTopOrderedItems,
+    buildPopularItems,
+    buildPopularItemsByCategory,
+    buildPersonalRecommendations,
+    buildFavoritesRecommendations,
+    buildSimilarRecommendations,
+    buildNewRecommendations,
+    getRecommendedDrinksForItems,
+    buildFavoritesRecommendationsGrouped,
+} = require("./src/menu/recommendations");
+
+const {
+    isAskingCart,
+    isAskingRecommendations,
+    isAskingPopularItems,
+    isOrderingIntent,
+    isAskingOrderStatus,
+    isFollowUpWhichOrder,
+    wasLastAssistantAboutOrderStatus,
+    isRepeatLastOrderCommand,
+    isSmallTalk,
+    isFinishOrderIntent,
+    isConfirmYes,
+    isAskingRecommendedDrinksForFood,
+} = require("./src/intents/textIntents");
+
+
+const {
+    centToEur,
+    mapRecommendedDrinks,
+    buildMenuContext,
+    formatContextJson,
+    buildAllMenuNames,
+    extractExactMenuMatches,
+    getActiveAllergens,
+} = require("./src/menu/menuHelpers");
+
+const {
+    formatOrderItemsShort,
+    buildOrderStatusResponse,
+    buildOrderSelectionResponse,
+    buildSingleOrderStatusResponse,
+} = require("./src/orders/orderStatus");
+
+const {
+    buildLastAnyOrderResponse,
+    buildLastDeliveredOrderResponse,
+    buildRepeatLastOrderSubmitResponse,
+    buildRepeatLastOrderToCartResponse,
+    buildRepeatLastAnyOrderSubmitResponse,
+    buildRepeatLastAnyOrderToCartResponse,
+    buildOrderHistoryResponse,
+    buildHistoryOrderDetailResponse,
+} = require("./src/orders/orderHistory");
+
+const {
+    buildCartResponse,
+} = require("./src/orders/cart");
+
+const {
+    buildMenuCategoryActions,
+    buildMenuItemActions,
+    buildMenuItemConfirmResponse,
+} = require("./src/menu/categories");
+
+const {
+    buildRecommendationTypeMenuResponse,
+    buildRecommendationItemActions,
+    buildRecommendationItemActionsWhenChoosingWhatIsPopular,
+    buildRecommendationResultResponse,
+} = require("./src/menu/recommendationResponses");
+
+const {
+    buildRecommendedDrinksForFoodResponse,
+    buildDrinksWithAllergensResponse,
+    buildCategoryItemsResponse,
+} = require("./src/menu/menuResponses");
+
+const {
+    formatHistory,
+    buildOrdersContext,
+} = require("./src/ai/gemini");
+
+const {
+    callOpenAI,
+} = require("./src/ai/openai");
+
+
+const {
+    planUserRequest,
+} = require("./src/ai/requestPlanner");
 
 const admin = require("firebase-admin");
-const {onCall, HttpsError} = require("firebase-functions/v2/https");
-const {defineSecret} = require("firebase-functions/params");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { defineSecret } = require("firebase-functions/params");
 
 admin.initializeApp();
 
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
 const OPENAI_API_KEY = defineSecret("OPENAI_API_KEY");
-async function callOpenAI({apiKey, prompt, temperature = 0.2}) {
-  const res = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4.1-mini",
-      input: prompt,
-      temperature,
-    }),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    console.error("OPENAI ERROR:", JSON.stringify(data));
-    throw new Error(JSON.stringify(data));
-  }
-
-  const text =
-    data.output_text ||
-    data.output
-      ?.flatMap((item) => item.content || [])
-      ?.map((content) => content.text || "")
-      ?.join("")
-      ?.trim() ||
-    "";
-
-  console.log("OPENAI FULL DATA:", JSON.stringify(data));
-  console.log("OPENAI TEXT:", text);
-
-  return text;
-}
-
-
-function cleanNote(note) {
-  if (!note) return "";
-
-  const cleaned = note.trim();
-  const lower = normalizeText(cleaned);
-
-  const invalidOnly = [
-    "ubaci",
-    "dodaj",
-    "daj",
-    "daj mi",
-    "stavi",
-    "stavi mi",
-    "zelim",
-    "hocu",
-    "naruci",
-  ];
-
-  if (invalidOnly.includes(lower)) return "";
-
-return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);}
-
-async function parseOrderFromMessage({apiKey, message, foods, drinks, modifications}) {
-   const parserItems = buildMenuParserItems(foods, drinks, modifications);
-    const fixedMessage = fixTypos(message);
-
-  const prompt = `
-Ti si parser narudžbe za restoran.
-
-Iz korisnikove poruke izvuci artikle, količine i modifikacije.
-
-Vrati SAMO JSON:
-{
-  "items": [
-    {
-      "name": "TOČAN_NAZIV_IZ_MENIJA",
-      "quantity": 1,
-      "modifications": ["TOČNA_MODIFIKACIJA_IZ_BAZE"],
-      "note": ""
-    }
-  ],
-  "unrecognized": []
-}
-PRAVILA:
-- Artikle prepoznaj po name ili aliases.
-- name mora biti identičan vrijednosti iz MENIJA.
-- Vrati samo artikle koji postoje u MENI.
-- Ako nisi siguran koji je artikl, nemoj ga vratiti.
-- Ako korisnik napiše djelomičan ili krivo napisan naziv (npr. "aj" umjesto "čaj"),
-  pokušaj pronaći NAJBLIŽI naziv iz menija koristeći kontekst ostatka rečenice.
-- Primjer: "aj od marelice" → "ČAJ OD MARELICE"
-- Nemoj pogađati nasumično, već koristi riječi oko naziva.
-- Ako korisnik navede više artikala odvojene zarezom ili riječju "i", pokušaj prepoznati SVAKI artikl posebno.
-- Pića i hranu smiješ vratiti zajedno u istom odgovoru.
-- Ako korisnik napiše "čaj od marelice, čaj od kruške i svježi sok s ciklom", moraš vratiti sva 3 pića ako postoje u MENI.
-- Nemoj stati nakon prva dva artikla.
-- Ako korisnik traži artikl koji ne možeš sigurno povezati s MENI, nemoj ga staviti u items.
-- Takav neprepoznati artikl stavi u unrecognized kao tekst korisnika.
-- Primjer: ako korisnik napiše "sok od cikle", a toga nema u MENI, vrati "unrecognized":["sok od cikle"].
-
-MODIFIKACIJE:
-- Modifikacije smiješ koristiti SAMO iz polja modifications tog artikla.
-- Modifikacija mora biti ista kao jedna od ponuđenih vrijednosti iz modifications.
-- NIKAD nemoj pretpostavljati modifikacije.
-- NIKAD nemoj dodavati slične modifikacije.
-- NIKAD nemoj zamijeniti korisnikov zahtjev nekom drugom modifikacijom.
-- Ako korisnik traži nešto što nije identična službena modifikacija za taj artikl, stavi to u note.
-- Ako korisnik kaže "s kulenom", a artikl nema "S KULENOM" u modifications, modifications mora biti [], a note mora biti "s kulenom".
-- Ako korisnik kaže "bez leda", a artikl nema "BEZ LEDA" u modifications, modifications mora biti [], a note mora biti "bez leda".
-- Ako korisnik kaže "s limunom", a artikl nema "S LIMUNOM" u modifications, modifications mora biti [], a note mora biti "s limunom".
-- Ako korisnik kaže "bez gljiva", a artikl ima "BEZ GLJIVA" u modifications, koristi "BEZ GLJIVA".
-- Ako korisnik kaže "s ledom", a artikl ima "S LEDOM" u modifications, koristi "S LEDOM".
-- Ako modifikacija nije identična jednoj iz modifications, NIKADA je nemoj staviti u modifications, čak ni ako je vrlo slična.
-
-NAPOMENE:
-- note koristi za neslužbene dodatke ili posebne želje konobaru.
-- note koristi za: "za van", "odvojeno pakiranje", "bez žurbe", "posebno", "nemoj previše grijati", "bez soli", "s limunom", "s kulenom".
-- Riječi akcije nikad nisu note.
-
-IGNORIRAJ RIJEČI AKCIJE:
-- "dodaj", "ubaci", "daj", "daj mi", "stavi", "stavi mi", "želim", "hoću", "naruči".
-
-KOLIČINE:
-- jedna/jedan/jedno/1 = 1
-- dvije/dva/2 = 2
-- tri/3 = 3
-- četiri/4 = 4
-- pet/5 = 5
-- šest/6 = 6
-- sedam/7 = 7
-- osam/8 = 8
-- devet/9 = 9
-- deset/10 = 10
-- Ako nema količine, quantity je 1.
-
-OSTALO:
-- Ako ništa ne prepoznaš, vrati {"items":[]}.
-- Ne piši ništa osim JSON-a.
-- Ako korisnik napiše djelomičan naziv, pronađi najbliži naziv iz MENIJA.
-- Dozvoljeno je fuzzy prepoznavanje naziva artikla, ali NE modifikacija.
-- Nikad ne smiješ tvrditi da je narudžba završena, poslana ili zaprimljena u kuhinji.
-
-PRIMJER:
-Poruka: "dvije kapricoze bez gljiva za van"
-Odgovor:
-{"items":[{"name":"PIZZA CAPRICCIOSA","quantity":2,"modifications":["BEZ GLJIVA"],"note":"za van"}]}
-
-PRIMJER:
-Poruka: "daj mi dvije kapricoze s kulenom"
-Odgovor:
-{"items":[{"name":"PIZZA CAPRICCIOSA","quantity":2,"modifications":[],"note":"s kulenom"}]}
-
-PRIMJER:
-Poruka: "daj mi kapricozu bez gljiva s kulenom"
-Odgovor:
-{"items":[{"name":"PIZZA CAPRICCIOSA","quantity":1,"modifications":["BEZ GLJIVA"],"note":"s kulenom"}]}
-
-
-PRIMJER:
-Poruka: "daj mi pizzu capricciosu, sendvič šunka sir, čaj od marelice, čaj od kruške i svježi sok s ciklom"
-Odgovor:
-{"items":[{"name":"PIZZA CAPRICCIOSA","quantity":1,"modifications":[],"note":""},{"name":"SENDVIČ ŠUNKA SIR","quantity":1,"modifications":[],"note":""},{"name":"ČAJ OD MARELICE","quantity":1,"modifications":[],"note":""},{"name":"ČAJ OD KRUŠKE","quantity":1,"modifications":[],"note":""},{"name":"SVJEŽI SOK OD NARANČE","quantity":1,"modifications":[],"note":""}]}
-
-MENI:
-${JSON.stringify(parserItems)}
-
-PORUKA:
-${fixedMessage}
-`.trim();
-
-  const text = await callOpenAI({
-    apiKey,
-    prompt,
-    temperature: 0,
-  });
-
-  try {
-    const cleaned = text
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-
-    const start = cleaned.indexOf("{");
-    const end = cleaned.lastIndexOf("}");
-    const jsonText = start !== -1 && end !== -1
-      ? cleaned.substring(start, end + 1)
-      : cleaned;
-
-    const parsed = JSON.parse(jsonText);
-    const parsedItems = Array.isArray(parsed.items) ? parsed.items : [];
-const availableNames = buildMenuNameSet(foods, drinks);
-const unrecognized = Array.isArray(parsed.unrecognized)
-  ? parsed.unrecognized.map((x) => x.toString().trim()).filter(Boolean)
-  : [];
-
-  const resolvedFromUnrecognized = resolveUnrecognizedItems(
-    unrecognized,
-    foods,
-    drinks
-  );
-
-  const allParsedItems = [
-    ...parsedItems,
-    ...resolvedFromUnrecognized,
-  ];
-
- const resolvedOriginalTexts = new Set(
-   resolvedFromUnrecognized.map((item) => normalizeText(item.originalText))
- );
-
- const finalUnrecognized = unrecognized.filter((item) =>
-   !resolvedOriginalTexts.has(normalizeText(item))
- );
-   return {
-     unrecognized: finalUnrecognized,
-     items: allParsedItems
-       .filter((item) => item?.name && availableNames.has(item.name))
-       .map((item) => {
-        const quantity = Number(item.quantity || 1);
-
-        const officialMods = Object.values(modifications[item.name] || {})
-          .map((m) => m.toString().trim());
-
-        const requestedMods = Array.isArray(item.modifications)
-          ? item.modifications.map((m) => m.toString().trim()).filter(Boolean)
-          : [];
-
-        const validMods = [];
-        const invalidMods = [];
-
-        requestedMods.forEach((mod) => {
-          const found = officialMods.find((official) =>
-            normalizeText(official) === normalizeText(mod)
-          );
-
-          if (found) {
-            validMods.push(found);
-          } else {
-            invalidMods.push(mod);
-          }
-        });
-
-        const noteRaw = typeof item.note === "string" ? item.note.trim() : "";
-const extraNote = invalidMods.length > 0
-  ? invalidMods.join(", ")
-  : "";
-          const combinedNoteRaw = [noteRaw, extraNote].filter(Boolean).join(", ");
-        const note = cleanNote(combinedNoteRaw);
-
-        const mods = validMods;
-          let textItem = `${item.name}`;
-
-          if (mods.length > 0) {
-            textItem += `\n\nMODIFIKACIJE: ${mods.join(", ")}`;
-          }
-
-          if (note) {
-            textItem += `\n\nNAPOMENA: ${note}`;
-          }
-
-          textItem += ` (X${quantity > 0 ? quantity : 1})`;
-
-          return textItem;
-        }),
-    };
-  } catch (err) {
-    console.error("parseOrderFromMessage error:", text);
-return {items: [], unrecognized: []};  }
-}
-
-function isAskingRecommendedDrinksForFood(message) {
-  const text = normalizeText(message);
-  return (
-    text.includes("preporucena pica") ||
-    text.includes("preporučena pića") ||
-    text.includes("sto ide uz") ||
-    text.includes("što ide uz") ||
-    text.includes("koje pice uz") ||
-    text.includes("koje piće uz")
-  );
-}
-
-function buildRecommendedDrinksForFoodResponse(nickname, message, foods, drinks) {
-  const matches = extractExactMenuMatches(message, foods, []);
-
-  if (!matches.length) {
-    return buildResponse(
-      "reply",
-      `${nickname}, napiši za koje jelo želiš preporučeno piće.`,
-      [],
-      buildMainActions()
-    );
-  }
-
-  const food = foods.find((f) => f.name === matches[0]);
-
-  if (!food || !food.preporucenaPica) {
-    return buildResponse(
-      "reply",
-      `${nickname}, za ${matches[0]} nemam navedena preporučena pića.`,
-      [],
-      buildMainActions()
-    );
-  }
-
-  const recommended = Object.keys(food.preporucenaPica)
-    .filter((id) => food.preporucenaPica[id])
-    .map((id) => drinks.find((d) => String(d.id) === String(id))?.name)
-    .filter(Boolean);
-
-  return buildResponse(
-    "reply",
-    recommended.length > 0
-      ? `${nickname}, uz ${food.name} preporučujem: ${recommended.join(" ili ")}.`
-      : `${nickname}, za ${food.name} trenutno nemam dostupna preporučena pića.`,
-    recommended,
-    buildMainActions()
-  );
-}
 
 function hasNote(items) {
-  return items.some((item) => item.includes("NAPOMENA:"));
+    return items.some((item) => item.includes("NAPOMENA:"));
 }
 
-function extractPopularItemNames(popularItems) {
-  return popularItems.flatMap((entry) => {
-    const parts = entry.split(":");
-    if (parts.length < 2) return [entry.trim()];
+function getRequestedMenuPart(message) {
+    const text = normalizeText(message);
 
-    return parts[1]
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-  });
+    if (text.includes("juhu") || text.includes("juha")) return "juha";
+    if (text.includes("pasta") || text.includes("pastu") || text.includes("tjestenina") || text.includes("tijesto")) return "pasta";
+if (text.includes("pice") || text.includes("piće") || text.includes("sok") || text.includes("vodu") || text.includes("voda") || text.includes("cola")) return "pice";
+if (
+    text.includes("glavna") ||
+    text.includes("glavno") ||
+    text.includes("glavnih")
+) return "glavno";
+
+if (
+    text.includes("meso") ||
+    text.includes("mesno")
+) return "meso";
+if (text.includes("desert") || text.includes("kolac") || text.includes("kolač") || text.includes("slatko")) return "desert";
+    if (text.includes("salata") || text.includes("salatu")) return "salata";
+    if (text.includes("pizza") || text.includes("pizzu")) return "pizza";
+    if (text.includes("sendvic") || text.includes("sendvič")) return "sendvic";
+    if (text.includes("kava") || text.includes("kavu") || text.includes("espresso")) return "kava";
+
+    return "";
 }
 
-function normalizeArray(val) {
-  if (!val) return [];
-  if (Array.isArray(val)) return val.filter(Boolean);
-  return Object.values(val).filter(Boolean);
-}
-function buildOrderStatusResponse(nickname, activeOrder) {
-  return buildResponse(
-    "order_status",
-    activeOrder
-      ? `${nickname}, status tvoje zadnje aktivne narudžbe je: ${activeOrder.status || "Nepoznat status"}.`
-      : `${nickname}, trenutačno nemaš aktivnu narudžbu.`,
-    [],
-    activeOrder
-      ? [buildAction(`refresh_order_status|${activeOrder.key || activeOrder.id || ""}`, "Osvježi status")]
-      : []
-  );
-}
+function extractQuantity(message) {
+    const text = normalizeText(message || "");
 
-function isAskingCart(message) {
-  const text = normalizeText(message);
+    const digitMatch = text.match(/\b([1-9]\d*)\b/);
+    if (digitMatch) return Number(digitMatch[1]);
 
-  return (
-    text.includes("sto imam u kosarici") ||
-    text.includes("sto ima u kosarici") ||
-    text.includes("sto sam stavio u kosaricu") ||
-    text.includes("sta sam stavio u kosarici") ||
-    text.includes("što imam u košarici") ||
-    text.includes("moja kosarica") ||
-    text.includes("moja košarica") ||
-    text.includes("sto sam dodao") ||
-    text.includes("što sam dodao") ||
-    text.includes("sta imam u kosarici") ||
-    text.includes("šta imam u košarici") ||
-     text.includes("sta ima u kosarici") ||
-   text.includes("kosaric") ||
-    text.includes("košaric") ||
-    text.includes("sto sam dodao") ||
-    text.includes("što sam dodao") ||
-    text.includes("sta sam dodao") ||
-    text.includes("šta sam dodao") ||
-    text.includes("sto imam") ||
-    text.includes("što imam") ||
-    text.includes("sta imam") ||
-    text.includes("šta imam")
-  );
+    if (text.includes("jednu") || text.includes("jedan") || text.includes("jedno")) return 1;
+    if (text.includes("dvije") || text.includes("dva")) return 2;
+    if (text.includes("tri")) return 3;
+    if (text.includes("cetiri") || text.includes("četiri")) return 4;
+    if (text.includes("pet")) return 5;
+    if (text.includes("sest") || text.includes("šest")) return 6;
+    if (text.includes("sedam") || text.includes("seedam")) return 7;
+    if (text.includes("osam") || text.includes("ossam")) return 8;
+
+
+
+    return null;
 }
 
+function isAskingItemModifications(message) {
+    const text = normalizeText(message || "");
 
-function isAskingDrinksWithAllergens(message) {
-  const text = normalizeText(message);
-
-  return (
-    text.includes("koja pica imaju alergene") ||
-    text.includes("koja pića imaju alergene") ||
-    text.includes("pica s alergenima") ||
-    text.includes("pića s alergenima") ||
-    text.includes("koje pice imaju alergene") ||
-    text.includes("koje piće ima alergene")
-  );
-}
-
-function buildCartResponse(nickname, cartItems) {
-  const items = Array.isArray(cartItems)
-    ? cartItems.filter((item) => typeof item === "string" && item.trim())
-    : [];
-
-  if (!items.length) {
-    return buildResponse(
-      "cart_preview",
-      `${nickname}, tvoja košarica je trenutno prazna.`,
-      [],
-      [
-        buildAction("open_menu_browser", "Dodaj artikle"),
-        buildAction("open_home", "Početak"),
-      ]
+    return (
+        text.includes("od cega") ||
+        text.includes("od cega imas") ||
+        text.includes("od čega imaš") ||
+        text.includes("od čega") ||
+        text.includes("s cim") ||
+        text.includes("s čim") ||
+        text.includes("sa cim") ||
+        text.includes("sa čim") ||
+        text.includes("koje okuse") ||
+        text.includes("kakve okuse") ||
+        text.includes("koji okusi") ||
+        text.includes("kakvi okusi") ||
+        text.includes("koje imas okuse") ||
+        text.includes("koje imaš okuse") ||
+        text.includes("koji su okusi") ||
+        text.includes("ima okusa") ||
+        text.includes("kakvih ima") ||
+        text.includes("kakav ima") ||
+        text.includes("koje dodatke") ||
+        text.includes("kakve dodatke") ||
+        text.includes("s kojim dodacima") ||
+        text.includes("kakve priloge") ||
+        text.includes("koje priloge") ||
+        text.includes("koje modifikacije") ||
+        text.includes("sto mogu dodati") ||
+        text.includes("što mogu dodati") ||
+        text.includes("sta mogu dodati") ||
+        text.includes("šta mogu dodati")
     );
-  }
-
-const formattedItems = items.map((item) => {
-  const base = item
-    .split("\n")[0]
-    .replace(/\(X\d+\)/i, "")
-    .trim();
-
-  const quantityMatch = item.match(/\(X(\d+)\)/i);
-  const quantity = quantityMatch ? Number(quantityMatch[1]) : 1;
-
-  const modsMatch = item.match(/MODIFIKACIJE:([\s\S]*?)(?:\n\nNAPOMENA:|\s*\(X\d+\)|$)/i);
-  const mods = modsMatch ? modsMatch[1].trim() : "";
-
-  const noteMatch = item.match(/NAPOMENA:([\s\S]*?)(?:\s*\(X\d+\)|$)/i);
-  const note = noteMatch ? noteMatch[1].trim() : "";
-
-  let text = `- ${base.toLowerCase()}`;
-
-  const details = [];
-
-  if (mods) {
-    details.push(`modifikacije: ${mods.toLowerCase()}`);
-  }
-
-  if (note) {
-    details.push(`napomena: ${note.toLowerCase()}`);
-  }
-
-  if (details.length > 0) {
-    text += ` -> ${details.join(", ")}`;
-  }
-
-  if (quantity > 1) {
-    text += ` x${quantity}`;
-  }
-
-  return text;
-});
-
-  return buildResponse(
-    "cart_preview",
-    `${nickname}, u tvojoj košarici imaš:\n\n${formattedItems.join("\n\n")}`,
-    items,
-    [
-      buildAction("go_to_cart", "Završi narudžbu"),
-      buildAction("open_menu_browser", "Dodaj još"),
-      buildAction("open_home", "Početak"),
-    ]
-  );
 }
 
-function getActiveAllergens(item) {
-  const alergeni = item?.alergeni || {};
+function getModificationOptionsForItem(itemName, modifications) {
+    const mods = modifications[itemName] || {};
 
-  return Object.entries(alergeni)
-    .filter(([, value]) => value === true)
-    .map(([key]) => key);
+    return Object.values(mods)
+        .map((mod) => mod && mod.toString().trim())
+        .filter(Boolean);
 }
 
-function buildDrinksWithAllergensResponse(nickname, drinks) {
-  const result = drinks
-    .map((drink) => ({
-      name: drink.name,
-      allergens: getActiveAllergens(drink),
-    }))
-    .filter((drink) => drink.allergens.length > 0);
+function getDrinkTypeFromMessage(message) {
+    const text = normalizeText(message);
 
-  if (!result.length) {
-    return buildResponse(
-      "reply",
-      `${nickname}, trenutno nijedno dostupno piće nema navedene alergene.`,
-      [],
-      buildMainActions()
-    );
-  }
+    if (text.includes("sok")) return "sok";
+    if (text.includes("gaz")) return "gazirano";
+    if (text.includes("voda")) return "voda";
+    if (text.includes("kava")) return "kava";
+    if (text.includes("caj") || text.includes("čaj")) return "caj";
 
-  const text = result
-    .map((drink) => `${drink.name}: ${drink.allergens.join(", ")}`)
-    .join("; ");
-
-  return buildResponse(
-    "reply",
-    `${nickname}, pića s navedenim alergenima su: ${text}.`,
-    result.map((drink) => drink.name),
-    buildMainActions()
-  );
+    return "";
 }
-
-function isFinishOrderIntent(message) {
-  const text = normalizeText(message);
-
-  return (
-    text.includes("zavrsi narudzbu") ||
-    text.includes("završi narudžbu") ||
-    text.includes("posalji narudzbu") ||
-    text.includes("pošalji narudžbu") ||
-    text.includes("gotovo") ||
-    text.includes("to je to")
-  );
-}
-
-
-
-
-function isSmallTalk(message) {
-  const text = normalizeText(message);
-
-  const phrases = [
-    "bok",
-    "ej",
-    "hej",
-    "halo",
-    "pozdrav",
-    "dobar dan",
-    "dobra vecer",
-    "dobra večer",
-    "sta ima",
-    "šta ima",
-    "kako si",
-  ];
-
-return phrases.some((p) => text === normalizeText(p));
-}
-
-function extractBaseItemName(orderItem) {
-  if (!orderItem || typeof orderItem !== "string") return "";
-
-  return orderItem
-    .split("\n")[0]
-    .replace(/\(X\d+\)/i, "")
-    .trim();
-}
-
-function extractNote(item) {
-  const match = item.match(/NAPOMENA:\s*([\s\S]*?)(?:\s*\(X\d+\)|$)/i);
-  return match ? match[1].trim() : "";
-}
-
-function buildOrderSelectionResponse(nickname, orders) {
-  if (!orders.length) {
-    return buildResponse(
-      "reply",
-      `${nickname}, trenutačno nemaš aktivnu narudžbu.`,
-      [],
-      [
-        buildAction("open_home", "Početak"),
-      ]
-    );
-  }
-
-  if (orders.length === 1) {
-    return buildSingleOrderStatusResponse(nickname, orders[0]);
-  }
-
-  const orderActions = orders.slice(0, 8).map((order, index) => {
-    const label = `Narudžba ${index + 1}: ${formatOrderItemsShort(order)}`;
-    return buildAction(`select_order_status|${order.key || order.id || index}`, label);
-  });
-
-  return buildResponse(
-    "order_selection",
-    `${nickname}, imaš više aktivnih narudžbi. Odaberi za koju želiš provjeriti status.`,
-    [],
-    [
-      ...orderActions,
-      buildAction("open_home", "Početak"),
-    ]
-  );
-}
-
-function buildSingleOrderStatusResponse(nickname, order) {
-  if (!order) {
-    return buildResponse(
-      "reply",
-      `${nickname}, ne mogu pronaći odabranu narudžbu.`,
-      [],
-      [
-        buildAction("open_order_status", "Natrag"),
-        buildAction("open_home", "Početak"),
-      ]
-    );
-  }
-
-  const items = getOrderItems(order);
-  const status = order.status || "Nepoznat status";
-  const orderKey = order.key || order.id || "";
-
-  return buildResponse(
-    "order_status",
-    `${nickname}, status odabrane narudžbe je: ${status}. Stavke: ${items.join(", ")}.`,
-    [],
-    [
-      buildAction(`refresh_order_status|${orderKey}`, "Osvježi status"),
-      buildAction("open_order_status", "Natrag"),
-      buildAction("open_home", "Početak"),
-    ]
-  );
-}
-
-function normalizeText(text) {
-  return (text || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
-}
-
-function fixTypos(text) {
-  return (text || "")
-    .replace(/\baj\b/gi, "čaj")
-    .replace(/\bcaj\b/gi, "čaj")
-    .replace(/\bsecer\b/gi, "šećer")
-    .replace(/\bnarance\b/gi, "naranče")
-    .replace(/\blimunom\b/gi, "limunom");
-}
-
-function filterAvailable(items) {
-  return items.filter((item) => item && item.dostupno !== false);
-}
-
-function buildCategoryRecommendations(userOrders, foods, drinks, limit = 3) {
-  const menu = [...foods, ...drinks];
-
-  const deliveredOrders = userOrders.filter((order) =>
-    normalizeText(order?.status || "") === normalizeText("Dostavljeno")
-  );
-
-  const categories = new Map();
-
-  deliveredOrders.forEach((order) => {
-    getOrderItems(order).forEach((item) => {
-      const base = extractBaseItemName(item);
-
-      const found = menu.find((m) => m.name === base);
-      if (!found) return;
-
-      const cat = found.category || "ostalo";
-
-      categories.set(cat, (categories.get(cat) || 0) + 1);
-    });
-  });
-
-  // sortiraj kategorije po učestalosti
-  const sortedCats = [...categories.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([cat]) => cat);
-
-  const result = [];
-
-  sortedCats.forEach((cat) => {
-    menu.forEach((item) => {
-      if (
-        item.category === cat &&
-        !result.includes(item.name)
-      ) {
-        result.push(item.name);
-      }
-    });
-  });
-
-  return result.slice(0, limit);
-}
-
-function sortByName(items) {
-  return [...items].sort((a, b) => {
-    const nameA = (a?.name || "").toString().toLowerCase();
-    const nameB = (b?.name || "").toString().toLowerCase();
-    return nameA.localeCompare(nameB, "hr");
-  });
-}
-
-function sortOrdersByCreatedAtDesc(orders) {
-  return [...orders].sort((a, b) => {
-    const aTime = Number(a?.createdAt || 0);
-    const bTime = Number(b?.createdAt || 0);
-    return bTime - aTime;
-  });
-}
-
-function getOrderItems(order) {
-  if (!order || !Array.isArray(order.stavke)) return [];
-  return order.stavke.filter((item) => typeof item === "string" && item.trim());
-}
-
-
-function centToEur(cents) {
-  if (typeof cents !== "number") return null;
-  return (cents / 100).toFixed(2);
-}
-
-function buildMenuContext(foods, drinks) {
-  return {
-    hrana: foods.map((f) => ({
-      naziv: f.name ?? "",
-      kategorija: f.category ?? "",
-      cijenaCent: f.cijenaCent ?? null,
-      cijenaEur: centToEur(f.cijenaCent),
-      opis: f.opis ?? "",
-      dostupno: f.dostupno !== false,
-      alergeni: f.alergeni || {},
-      oznake: {
-        ljuto: f.oznake?.ljuto === true,
-        vegansko: f.oznake?.vegansko === true,
-        vegetarijansko: f.oznake?.vegetarijansko === true,
-      },
-preporucenaPica: mapRecommendedDrinks(f.preporucenaPica, drinks),    })),
-    pica: drinks.map((d) => ({
-      naziv: d.name ?? "",
-      kategorija: d.category ?? "",
-      cijenaCent: d.cijenaCent ?? null,
-      cijenaEur: centToEur(d.cijenaCent),
-      opis: d.opis ?? "",
-      dostupno: d.dostupno !== false,
-      alergeni: d.alergeni || {},
-      oznake: {
-        ljuto: d.oznake?.ljuto === true,
-        vegansko: d.oznake?.vegansko === true,
-        vegetarijansko: d.oznake?.vegetarijansko === true,
-      },
-    })),
-  };
-}
-function formatContextJson(foods, drinks) {
-  return JSON.stringify(buildMenuContext(foods, drinks), null, 2);
-}
-
-function buildOrdersContext(activeOrder, lastDeliveredOrder) {
-  return JSON.stringify(
-    {
-      trenutnaNarudzba: activeOrder || null,
-      proslaNarudzba: lastDeliveredOrder || null,
-    },
-    null,
-    2
-  );
-}
-
-function extractGeminiText(data) {
-  const candidates = data?.candidates;
-  if (!Array.isArray(candidates) || candidates.length === 0) {
-    return "Nema odgovora od modela.";
-  }
-
-  const parts = candidates[0]?.content?.parts;
-  if (!Array.isArray(parts) || parts.length === 0) {
-    return "Nema odgovora od modela.";
-  }
-
-  const text = parts
-    .map((p) => (typeof p?.text === "string" ? p.text : ""))
-    .join("")
-    .trim();
-
-  return text || "Nema odgovora od modela.";
-}
-
-function formatHistory(history) {
-  if (!Array.isArray(history) || history.length === 0) {
-    return "Nema.";
-  }
-
-  return history.slice(-4)
-    .filter((item) => item && typeof item.text === "string")
-    .map((item) => {
-      const role = item.role === "assistant" ? "AI" : "Korisnik";
-      return `${role}: ${item.text}`;
-    })
-    .join("\n");
-}
-
-function isAskingAboutLastOrder(message) {
-  const text = normalizeText(message);
-  const phrases = [
-    "sto sam prosli put narucio",
-    "sta sam prosli put narucio",
-    "sto sam narucio prosli put",
-    "sta sam narucio prosli put",
-    "moja prosla narudzba",
-    "prosla narudzba",
-    "zadnja narudzba",
-  ];
-  return phrases.some((phrase) => text.includes(phrase));
-}
-
-function isRepeatLastOrderCommand(message) {
-  const text = normalizeText(message);
-  return (
-    text === normalizeText("naruci mi kao prosli put") ||
-    text === normalizeText("naruči mi kao prošli put") ||
-    text === normalizeText("ponovi proslu narudzbu") ||
-    text === normalizeText("ponovi prošlu narudžbu")
-  );
-}
-
-function isAskingOrderStatus(message) {
-  const text = normalizeText(message);
-  const phrases = [
-    "status narudzbe",
-    "status narudžbe",
-    "gdje je moja narudzba",
-    "gdje je moja narudžba",
-    "dokle je moja narudzba",
-    "dokle je moja narudžba",
-    "provjeri status",
-  ];
-  return phrases.some((p) => text.includes(normalizeText(p)));
-}
-function isFollowUpWhichOrder(message) {
-  const text = normalizeText(message);
-
-  const phrases = [
-    "koja narudzba",
-    "koja narudžba",
-    "koju narudzbu",
-    "koju narudžbu",
-    "o kojoj narudzbi",
-    "o kojoj narudžbi",
-    "na koju mislis",
-    "na koju misliš",
-    "koja tocno",
-    "koja točno",
-  ];
-
-  return phrases.some((p) => text.includes(normalizeText(p)));
-}
-
-function wasLastAssistantAboutOrderStatus(history) {
-  if (!Array.isArray(history)) return false;
-
-  const lastAssistant = [...history]
-    .reverse()
-    .find((item) => item && item.role === "assistant" && typeof item.text === "string");
-
-  if (!lastAssistant) return false;
-
-  const text = normalizeText(lastAssistant.text);
-
-  return (
-    text.includes("status") ||
-    text.includes("narudzba") ||
-    text.includes("narudžba") ||
-    text.includes("dostavljena") ||
-    text.includes("zaprimljena")
-  );
-}
-
-function isAskingRecommendations(message) {
-  const text = normalizeText(message);
-  return (
-    text.includes("preporu") ||
-    text.includes("predlozi") ||
-    text.includes("predloži")
-  );
-}
-
-function isAskingPopularItems(message) {
-  const text = normalizeText(message);
-  const phrases = [
-    "sto se najvise narucuje",
-    "što se najviše naručuje",
-    "sto je popularno",
-    "što je popularno",
-    "najpopularnije",
-    "popularna jela",
-  ];
-
-  return phrases.some((p) => text.includes(normalizeText(p)));
-}
-
-function getRecommendedDrinksForItems(items, foods, drinks) {
-  const result = [];
-
-  items.forEach((rawItem) => {
-    const baseName = extractBaseItemName(rawItem);
-
-    const food = foods.find((f) =>
-      normalizeText(f.name) === normalizeText(baseName)
-    );
-
-    if (!food || !food.preporucenaPica) return;
-
-    const recommended = Object.keys(food.preporucenaPica)
-      .filter((id) => food.preporucenaPica[id])
-      .map((id) => drinks.find((d) => String(d.id) === String(id))?.name)
-      .filter(Boolean);
-
-    if (recommended.length > 0) {
-      result.push({
-        food: food.name,
-        drinks: [...new Set(recommended)].slice(0, 2),
-      });
-    }
-  });
-
-  return result;
-}
-
-function isOrderingIntent(message) {
-  const text = normalizeText(message);
-
-const phrases = [
-  "naruci",
-  "naruči",
-  "dodaj",
-  "ubaci",
-  "dodaj u kosaricu",
-  "dodaj u košaricu",
-  "zelim",
-  "želim",
-  "uzeo bih",
-  "uzela bih",
-  "hocu",
-  "hoću",
-  "daj mi",
-  "stavi mi",
-  "jednu",
-  "jedan",
-  "jedno",
-  "dva",
-  "dvije",
-  "tri",
-  "cetiri",
-  "četiri",
-  "pet",
-];
-  return phrases.some((p) => text.includes(normalizeText(p)));
-}
-
-function buildMenuNameSet(foods, drinks) {
-  const names = [...foods, ...drinks]
-    .map((item) => (item?.name || "").trim())
-    .filter(Boolean);
-
-  return new Set(names);
-}
-
-function buildMenuParserItems(foods, drinks, modifications = {}) {
-  return [...foods, ...drinks]
-    .filter((item) => item?.name)
-    .map((item) => ({
-      name: item.name,
-      category: item.category || "",
-      aliases: item.aliasi || [],
-      modifications: Object.values(modifications[item.name] || {}),
-    }));
-}
-
-function resolveUnrecognizedItems(unrecognized, foods, drinks) {
-  const menu = [...foods, ...drinks];
-
-  return unrecognized.flatMap((raw) => {
-    const text = normalizeText(raw);
-
-    const matches = menu.filter((item) => {
-      const name = normalizeText(item.name || "");
-      const aliases = Array.isArray(item.aliasi) ? item.aliasi : [];
-
-      return (
-        name.includes(text) ||
-        text.includes(name) ||
-        aliases.some((a) => normalizeText(a) === text)
-      );
-    });
-
-    if (matches.length === 1) {
-    return [{
-      originalText: raw,
-      name: matches[0].name,
-      quantity: 1,
-      modifications: [],
-      note: "",
-    }];
-    }
-
-    return [];
-  });
-}
-
-function buildAllMenuNames(foods, drinks) {
-  return [...foods, ...drinks]
-    .map((item) => (item?.name || "").trim())
-    .filter(Boolean);
-}
-
-function extractExactMenuMatches(message, foods, drinks) {
-  const text = normalizeText(message);
-  const menuNames = buildAllMenuNames(foods, drinks);
-
-  return menuNames.filter((name) => {
-    const normalizedName = normalizeText(name);
-    return normalizedName && text.includes(normalizedName);
-  });
-}
-
-function isConfirmYes(message) {
-  const text = normalizeText(message);
-  return ["da", "yes", "može", "moze"].includes(text);
-}
-
 
 function buildStrictOrderingHelpResponse(nickname) {
-  return buildResponse(
-    "reply",
-    `${nickname}, za dodavanje artikala u narudžbu koristi pregled jelovnika i ponuđene gumbe. U chatu ti mogu pomoći s informacijama o jelovniku, alergenima, cijenama i preporukama.`,
-    [],
-    buildMainActions()
-  );
+    return buildResponse(
+        "reply",
+        `${nickname}, za dodavanje artikala u narudžbu koristi pregled jelovnika. U chatu ti mogu pomoći s informacijama o jelovniku, alergenima, cijenama i preporukama.`,
+        [],
+        buildMainActions(),
+    );
 }
 
-function countTopOrderedItems(orders, limit = 3) {
-  const counts = new Map();
 
-  orders.forEach((order) => {
-    getOrderItems(order).forEach((rawItem) => {
-      const baseName = extractBaseItemName(rawItem);
-      if (!baseName) return;
 
-      const quantityMatch = rawItem.match(/\(X(\d+)\)/i);
-      const quantity = quantityMatch ? Number(quantityMatch[1]) : 1;
+function getRecommendationGroup(item) {
+    const category = normalizeText((item && item.category) || "");
 
-      const current = counts.get(baseName) || 0;
-
-      counts.set(baseName, current + quantity);
-    });
-  });
-
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
-    .map(([name]) => name);
-}
-
-function buildPopularItems(allOrders, foods, drinks, limitPerCategory = 1) {
-  const menu = [...foods, ...drinks];
-  const menuByName = new Map(menu.map((item) => [item.name, item]));
-
-  const deliveredOrders = allOrders.filter((order) =>
-    normalizeText(order?.status || "") === normalizeText("Dostavljeno")
-  );
-
-  const counts = new Map();
-
-  deliveredOrders.forEach((order) => {
-    getOrderItems(order).forEach((rawItem) => {
-      const baseName = extractBaseItemName(rawItem);
-      if (!menuByName.has(baseName)) return;
-
-      const quantityMatch = rawItem.match(/\(X(\d+)\)/i);
-      const quantity = quantityMatch ? Number(quantityMatch[1]) : 1;
-
-      counts.set(baseName, (counts.get(baseName) || 0) + quantity);
-    });
-  });
-
-  const byCategory = new Map();
-
-  [...counts.entries()].forEach(([name, count]) => {
-    const item = menuByName.get(name);
-    const category = item?.category || "OSTALO";
-
-    if (!byCategory.has(category)) {
-      byCategory.set(category, []);
+    if (
+        category.includes("tost") ||
+        category.includes("salata") ||
+        category.includes("vege")
+    ) {
+        return "Od predjela";
     }
 
-    byCategory.get(category).push({name, count});
-  });
+    if (
+        category.includes("pizza") ||
+        category.includes("tijesto") ||
+        category.includes("sendvic") ||
+        category.includes("sendvič")
+    ) {
+        return "Od glavnog jela";
+    }
 
-  const result = [];
+    if (category.includes("desert")) {
+        return "Od deserta";
+    }
 
-  [...byCategory.entries()]
-    .sort(([catA], [catB]) => catA.localeCompare(catB, "hr"))
-    .forEach(([category, items]) => {
-      const popularInCategory = items
-        .sort((a, b) => b.count - a.count)
-        .slice(0, limitPerCategory)
-        .map((item) => item.name);
+    if (
+        category.includes("sok") ||
+        category.includes("kava") ||
+        category.includes("caj") ||
+        category.includes("čaj") ||
+        category.includes("pice") ||
+        category.includes("piće")
+    ) {
+        return "Od pića";
+    }
 
-      if (popularInCategory.length > 0) {
-        result.push(`${category}: ${popularInCategory.join(", ")}`);
-      }
+    return "Još bih izdvojio";
+}
+
+function getPopularCategoryFromMessage(message) {
+    const text = normalizeText(message);
+
+    if (text.includes("desert") || text.includes("kolac") || text.includes("kolač")) return "desert";
+    if (text.includes("pizza") || text.includes("pizze")) return "pizza";
+    if (text.includes("sendvic") || text.includes("sendvič")) return "sendvic";
+    if (text.includes("salata")) return "salata";
+    if (text.includes("pasta") || text.includes("tjestenina") || text.includes("tijesto")) return "tijesto";
+    if (text.includes("pice") || text.includes("piće") || text.includes("sok") || text.includes("kava")) return "pice";
+
+    return "";
+}
+
+function buildGroupedRecommendationText(nickname, itemNames, foods, drinks) {
+    if (!itemNames || itemNames.length === 0) {
+        return `${nickname}, još nemam dovoljno tvojih prošlih dostavljenih narudžbi za osobnu preporuku.`;
+    }
+
+    const groups = {};
+
+    itemNames.forEach((name) => {
+        const menuItem = findMenuItemByName(name, foods, drinks);
+        const group = getRecommendationGroup(menuItem);
+
+        if (!groups[group]) {
+            groups[group] = [];
+        }
+
+        groups[group].push(name);
     });
 
-  return result;
-}
-function buildPersonalRecommendations(userOrders, foods, drinks, limit = 3) {
-  const availableNames = buildMenuNameSet(foods, drinks);
+    const preferredOrder = [
+        "Od predjela",
+        "Od glavnog jela",
+        "Od deserta",
+        "Od pića",
+        "Još bih izdvojio",
+    ];
 
-  const deliveredOrders = userOrders.filter((order) =>
-    normalizeText(order?.status || "") === normalizeText("Dostavljeno")
-  );
+    const sections = preferredOrder
+        .filter((group) => groups[group] && groups[group].length > 0)
+        .map((group) => `${group} ti predlažem:\n${groups[group].map((item) => `- ${item}`).join("\n")}`);
 
-  return countTopOrderedItems(deliveredOrders, 20)
-    .filter((name) => availableNames.has(name))
-    .slice(0, limit);
-}
-
-function buildFavoritesRecommendations(userOrders, foods, drinks, limit = 3) {
-  return buildPersonalRecommendations(userOrders, foods, drinks, limit);
-}
-
-function buildSimilarRecommendations(userOrders, foods, drinks, limit = 3) {
-  const favorites = buildPersonalRecommendations(userOrders, foods, drinks, 10);
-  const favoriteSet = new Set(favorites);
-
-  const categoryItems = buildCategoryRecommendations(userOrders, foods, drinks, 20);
-
-  return categoryItems
-    .filter((item) => !favoriteSet.has(item))
-    .slice(0, limit);
+    return `${nickname}, po tvojim prošlim narudžbama mogu ti preporučiti:\n\n${sections.join("\n\n")}`;
 }
 
 
+function pickItemForComposeRequest(requestedName, foods, drinks) {
+    const text = normalizeText(requestedName);
+    const menu = [].concat(foods || [], drinks || []);
 
-function buildNewRecommendations(userOrders, foods, drinks, limit = 3) {
-  const deliveredOrders = userOrders.filter((order) =>
-    normalizeText(order?.status || "") === normalizeText("Dostavljeno")
-  );
+    const rules = [
+        { match: ["juha", "juhu"], categories: ["juha"] },
+        { match: ["predjelo", "predjela"], categories: ["predjelo", "tost", "salata"] },
+        { match: ["glavno", "glavno jelo", "glavna jela", "meso", "mesno"], categories: ["glavno", "meso"] },
+        { match: ["pasta", "pašta", "tjestenina"], categories: ["pasta", "tjestenina", "tijesto"] },
+        { match: ["pizza", "pizzu"], categories: ["pizza"] },
+        { match: ["sendvic", "sendvič"], categories: ["sendvic", "sendvič"] },
+        { match: ["salata", "salatu"], categories: ["salata"] },
+        { match: ["desert", "deserta", "kolac", "kolač"], categories: ["desert", "kolac", "kolač"] },
+        { match: ["pice", "piće", "piti", "sok", "kava"], categories: ["pice", "piće", "sok", "kava"] },
+    ];
 
-  const alreadyOrdered = new Set(
-    deliveredOrders.flatMap((order) =>
-      getOrderItems(order).map((item) => extractBaseItemName(item))
-    )
-  );
-
-  const allMenuItems = [...foods, ...drinks]
-    .map((item) => item?.name)
-    .filter(Boolean);
-
-  const categoryItems = buildCategoryRecommendations(userOrders, foods, drinks, 50);
-
-  const newFromFavoriteCategories = categoryItems
-    .filter((item) => !alreadyOrdered.has(item));
-
-  if (newFromFavoriteCategories.length > 0) {
-    return newFromFavoriteCategories.slice(0, limit);
-  }
-
-  const anyNewItems = allMenuItems.filter((item) => !alreadyOrdered.has(item));
-
-  return anyNewItems.slice(0, limit);
-}
-
-function buildRecommendationTypeMenuResponse(nickname) {
-  return buildResponse(
-    "recommendation_menu",
-    `${nickname}, mogu ti preporučiti jela na više načina. Odaberi kakvu preporuku želiš.`,
-    [],
-    [
-      buildAction("recommend_favorites", "Po mojim prošlim narudžbama"),
-      buildAction("recommend_popular", "Najpopularnije trenutno"),
-      buildAction("recommend_new", "Nešto novo za isprobati"),
-      buildAction("open_home", "Početak"),
-    ]
-  );
-}
-
-function buildRecommendationItemActions(items, sourceAction) {
-  const actions = [];
-
-  items.forEach((item) => {
-    actions.push(
-      buildAction(
-        `pick_recommendation|${sourceAction}|${item}`,
-        `Dodaj ${item}`
-      )
+    const rule = rules.find((r) =>
+        r.match.some((word) => text.includes(normalizeText(word))),
     );
-  });
 
-  actions.push(buildAction("open_personal_recommendations", "Sve preporuke"));
-  actions.push(buildAction("open_home", "Početak"));
+    if (!rule) return [];
 
-  return actions;
+    return menu.filter((item) => {
+        const category = normalizeText(item.category || "");
+        const name = normalizeText(item.name || "");
+        const mealRole = normalizeText(item.mealRole || "");
+
+        return rule.categories.some((wanted) => {
+            const wantedText = normalizeText(wanted);
+
+            return (
+                category.includes(wantedText) ||
+                name.includes(wantedText) ||
+                mealRole.includes(wantedText)
+            );
+        });
+    });
 }
 
-function buildRecommendationItemActionsWhenChoosingWhatIsPopular(items, sourceAction) {
-  const actions = [];
-
-  items.forEach((item) => {
-    actions.push(
-      buildAction(
-        `pick_recommendation|${sourceAction}|${item}`,
-        `Dodaj ${item}`
-      )
-    );
-  });
-
-  actions.push(buildAction("open_home", "Početak"));
-
-  return actions;
-}
-
-function buildRecommendationResultResponse(
-  type,
-  nickname,
-  items,
-  emptyMessage,
-  successMessage,
-  sourceAction
-) {
-  if (!items.length) {
-    return buildResponse(
-      "reply",
-      emptyMessage,
-      [],
-      [
-        buildAction("open_personal_recommendations", "Natrag na preporuke"),
-        buildAction("open_home", "Početak"),
-      ]
-    );
-  }
-
-  return buildResponse(
-    type,
-    successMessage(items),
-    items,
-    buildRecommendationItemActions(items, sourceAction)
-  );
-}
-
-function buildAction(id, label) {
-  return {id, label};
-}
-function buildMainActions() {
-  return [
-    buildAction("open_new_order", "Nova narudžba"),
-    buildAction("open_order_status", "Status narudžbe"),
-    buildAction("open_last_delivered_order", "Zadnja dostavljena narudžba"),
-    buildAction("open_last_any_order", "Zadnja narudžba"),
-    buildAction("open_personal_recommendations", "Preporuči mi nešto"),
-    buildAction("open_popular_items", "Što je popularno?"),
-    buildAction("open_home", "Početak"),
-  ];
-}
-
-function buildDefaultInfoActions() {
-   return buildMainActions();
-
-}
-function buildResponse(type, message, items = [], actions = []) {
-  return {
-    type,
-    message,
-    items,
-    actions,
-  };
-}
-
-function buildHomeResponse(nickname) {
-  return buildResponse(
-    "home",
-    `Dobar dan, ${nickname}. Ja sam vaš AI konobar i mogu vam pomoći s jelovnikom, cijenama, alergenima, preporukama, popularnim jelima, statusom narudžbe i prošlim narudžbama. Za dodavanje artikala koristite ponuđene gumbe.`,
-    [],
-       buildMainActions()
-  );
-}
-function mapRecommendedDrinks(preporucenaPica, drinks) {
-  if (!preporucenaPica) return [];
-
-  const ids = Object.keys(preporucenaPica)
-    .filter((key) => preporucenaPica[key]);
-
-  return ids
-    .map((id) => {
-      const drink = drinks.find((d) => String(d.id) === String(id));
-      return drink?.name;
-    })
-    .filter(Boolean);
-}
-
-
-function buildLastAnyOrderResponse(nickname, order) {
-  if (!order) {
-    return buildResponse(
-      "reply",
-      `${nickname}, ne mogu pronaći tvoju zadnju narudžbu.`,
-      [],
-      [
-        buildAction("open_home", "Početak"),
-      ]
-    );
-  }
-
-  const items = getOrderItems(order);
-  const status = order.status || "Nepoznat status";
-
-  return buildResponse(
-    "last_any_order_actions",
-    items.length > 0 ?
-      `${nickname}, tvoja zadnja narudžba je: ${items.join(", ")}. Status: ${status}.` :
-      `${nickname}, pronašao sam tvoju zadnju narudžbu, ali nema stavki za prikaz. Status: ${status}.`,
-    items,
-    [
-      buildAction("repeat_last_any_order_submit", "Naruči ponovno"),
-      buildAction("repeat_last_any_order_to_cart", "Prilagodi narudžbu"),
-      buildAction("open_home", "Početak"),
-    ]
-  );
-}
-
-function buildLastDeliveredOrderResponse(nickname, items) {
-  if (!items.length) {
-    return buildResponse(
-      "reply",
-      `${nickname}, ne mogu pronaći tvoju zadnju dostavljenu narudžbu.`,
-      [],
-      [
-        buildAction("open_home", "Početak"),
-      ]
-    );
-  }
-
-  return buildResponse(
-    "last_delivered_order_actions",
-    `${nickname}, ovo je tvoja zadnja dostavljena narudžba: ${items.join(", ")}.`,
-    items,
-    [
-      buildAction("repeat_last_order_submit", "Naruči ponovno"),
-      buildAction("repeat_last_order_to_cart", "Prilagodi narudžbu"),
-      buildAction("open_home", "Početak"),
-    ]
-  );
-}
-function buildMenuCategoryActions(items, type) {
-  const categories = [...new Set(
-    items
-      .map((item) => (item?.category || "").trim())
-      .filter(Boolean)
-  )].sort((a, b) => a.localeCompare(b, "hr"));
-
-  const actions = categories.map((cat) =>
-    buildAction(`menu_${type}_category|${cat}`, cat)
-  );
-
-  actions.push(buildAction("open_menu_browser", "Natrag na jelovnik"));
-  actions.push(buildAction("open_home", "Početak"));
-
-  return actions;
-}
-
-function buildMenuItemActions(items, backAction) {
-  const actions = items.slice(0, 10).map((item) =>
-    buildAction(`pick_menu_item|${item.name}|${backAction}`, item.name)
-  );
-
-  actions.push(buildAction(backAction, "Natrag"));
-  actions.push(buildAction("open_home", "Početak"));
-
-  return actions;
-}
-
-function buildMenuItemConfirmResponse(nickname, itemName, backAction) {
-  return buildResponse(
-    "menu_item_add",
-    `${nickname}, želiš li dodati ${itemName} u narudžbu?`,
-    [`${itemName}(X1)`],
-    [
-      buildAction(`confirm_menu_item_add|${itemName}|${backAction}`, "Dodaj"),
-      buildAction(backAction, "Natrag"),
-      buildAction("open_home", "Početak"),
-    ]
-  );
-}
-
-
-
-async function callGemini({
-  apiKey,
-  message,
-  contextJson,
-  ordersContextJson,
-  nickname,
-  historyText,
-}) {
-  const model = "gemini-2.5-flash-lite";
-  const url =
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=` +
-    encodeURIComponent(apiKey);
-
-const prompt = `
-Ti si pametni konobar za restoran.
-
-PRAVILA:
-- Odgovaraj na hrvatskom jeziku.
-- Korisniku se obraćaj imenom: ${nickname}.
-- Koristi ISKLJUČIVO podatke iz konteksta.
-- Ne izmišljaj artikle, cijene, alergene, sastojke ni preporuke.
-- Ako podatak ne postoji u kontekstu, reci da ga nemaš.
-- Odgovor neka bude kratak i praktičan, najviše 3 kratke rečenice.
-- Chat služi samo za informiranje o jelovniku, alergenima, oznakama, cijenama, kategorijama, opisima artikala, preporukama, preporučenim pićima i statusu narudžbe.
-- Chat ne smije dodavati artikle u košaricu.
-- Chat ne smije slati narudžbu.
-- Chat ne smije tvrditi da je nešto dodano, poslano ili naručeno.
-- Ako korisnik želi naručiti, dodati artikl, poslati narudžbu ili mijenjati košaricu, uputi ga da koristi ponuđene gumbe i pregled jelovnika.
-- Ako korisnik pita za gluten, laktozu, orašaste plodove ili drugi alergen, provjeri samo polje alergeni.
-- Ako podatak o alergenu ne postoji, reci da nemaš taj podatak.
-- Ako korisnik pita što je vegansko, vegetarijansko ili ljuto, koristi polje oznake.
-- Ako korisnik pita što se preporučuje uz jelo, koristi polje preporucenaPica.
-- Kada navodiš preporučena pića, koristi njihove nazive, ne brojeve.
-- Ako korisnik pita što ima u nekoj kategoriji, navedi artikle iz te kategorije.
-- Prethodni razgovor koristi samo za razumijevanje pitanja, ali nikad nemoj iz njega predlagati dodavanje artikala.
-- Ako trenutna poruka korisnika nije jasno pitanje o jelovniku, alergenima, cijeni, preporukama ili statusu, odgovori da možeš pomoći oko jelovnika i narudžbe preko gumba.
-- Ako korisnik pita za status narudžbe ili postavi dodatno pitanje o tome "koja narudžba", ne pokušavaj sam zaključiti. Reci da status provjerava sustav kroz ponuđene gumbe.
-- Ako korisnik pita koja hrana ili pića imaju alergene, provjeri sve artikle i navedi samo one kod kojih je barem jedan alergen označen s true.
-- Ako nijedan artikl nema alergen označen s true, reci da trenutno nema artikala s navedenim alergenima.
-
-
-PRETHODNI RAZGOVOR:
-${historyText}
-
-KONTEKST MENIJA:
-${contextJson}
-
-KONTEKST NARUDŽBI:
-${ordersContextJson}
-
-KORISNIK:
-${message}
-`.trim();
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      contents: [{role: "user", parts: [{text: prompt}]}],
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 300,
-      },
-    }),
-  });
-
-  const raw = await res.text();
-
-  if (!res.ok) {
-    throw new Error(`Gemini error ${res.status}: ${raw}`);
-  }
-
-  const data = JSON.parse(raw);
-  return extractGeminiText(data);
-}
 
 exports.chatWaiter = onCall(
-  {
-    region: "europe-west1",
-    secrets: [GEMINI_API_KEY, OPENAI_API_KEY],
-  },
-  async (request) => {
-    try {
-      const message = (request.data?.message || "").trim();
-      const action = (request.data?.action || "").trim();
-      const userId = (request.data?.userId || "").trim();
-      const nickname = (request.data?.nickname || "Gost").trim();
-      const history = Array.isArray(request.data?.history) ? request.data.history : [];
-      const cartItems = Array.isArray(request.data?.cartItems) ? request.data.cartItems : [];
-      const historyText = formatHistory(history);
+    {
+        region: "europe-west1",
+        secrets: [GEMINI_API_KEY, OPENAI_API_KEY],
+    },
+    async (request) => {
+        console.log("EMULATOR HIT chatWaiter");
+        console.log("REQUEST DATA:", JSON.stringify(request.data || {}));
+        console.log("TEST VERSION 123 MOD CHECK ACTIVE");
 
-      if (!message && !action) {
-        throw new HttpsError("invalid-argument", "Poruka ili akcija su obavezni.");
-      }
+        try {
+            const data = request.data || {};
+            const message = (data.message || "").trim();
+            const action = (data.action || "").trim();
+            const mode = (data.mode || "").trim();
+            const userId = (data.userId || "").trim();
+            const nickname = (data.nickname || "Gost").trim();
+            const history = Array.isArray(data.history) ? data.history : [];
+            const shortHistory = history.slice(-8);
+            const cartItems = Array.isArray(data.cartItems) ? data.cartItems : [];
+            const historyText = formatHistory(shortHistory);
+            const isNewChatSession =
+                history.length === 0 ||
+                message === "Novi razgovor" ||
+                action === "new_chat";
 
-    const apiKey = GEMINI_API_KEY.value();
-    const openAiKey = OPENAI_API_KEY.value();
+            if (!message && !action) {
+                throw new HttpsError("invalid-argument", "Poruka ili akcija su obavezni.");
+            }
 
-    if (!apiKey) {
-      throw new HttpsError("failed-precondition", "Nedostaje GEMINI_API_KEY secret.");
-    }
+            const apiKey = GEMINI_API_KEY.value();
+            const openAiKey = OPENAI_API_KEY.value();
 
-    if (!openAiKey) {
-      throw new HttpsError("failed-precondition", "Nedostaje OPENAI_API_KEY secret.");
-    }
+            if (!apiKey) {
+                throw new HttpsError("failed-precondition", "Nedostaje GEMINI_API_KEY secret.");
+            }
 
-      const root = admin.database().ref();
+            if (!openAiKey) {
+                throw new HttpsError("failed-precondition", "Nedostaje OPENAI_API_KEY secret.");
+            }
 
-      const [picaSnap, hranaSnap, narudzbeSnap, modifikacijeSnap] = await Promise.all([
-        root.child("pica").get(),
-        root.child("hrana").get(),
-        root.child("narudzbe").get(),
-        root.child("modifikacije").get(),
-      ]);
-const modifications = modifikacijeSnap.val() || {};
-      const drinks = sortByName(filterAvailable(normalizeArray(picaSnap.val())));
-      const foods = sortByName(filterAvailable(normalizeArray(hranaSnap.val())));
-const rawOrders = narudzbeSnap.val() || {};
-const allOrders = Object.entries(rawOrders)
-  .map(([key, value]) => ({key, ...value}))
-  .filter(Boolean);
-      const userOrders = userId ?
-        allOrders.filter((order) => order && order.userId === userId) :
-        [];
+            const root = admin.database().ref();
 
-      const activeOrders = sortOrdersByCreatedAtDesc(
-        userOrders.filter((order) => {
-          const status = normalizeText(order?.status || "");
-          return status !== normalizeText("Dostavljeno") &&
-            status !== normalizeText("Otkazano");
-        })
-      );
+            const [picaSnap, hranaSnap, narudzbeSnap, modifikacijeSnap] = await Promise.all([
+                root.child("pica").get(),
+                root.child("hrana").get(),
+                root.child("narudzbe").get(),
+                root.child("modifikacije").get(),
+            ]);
+            const modifications = modifikacijeSnap.val() || {};
+            const drinks = sortByName(filterAvailable(normalizeArray(picaSnap.val())));
+            const foods = sortByName(filterAvailable(normalizeArray(hranaSnap.val())));
+            const rawOrders = narudzbeSnap.val() || {};
+            const allOrders = Object.entries(rawOrders)
+                .map(([key, value]) => ({ key, ...value }))
+                .filter(Boolean);
+            const userOrders = userId ?
+                allOrders.filter((order) => order && order.userId === userId) :
+                [];
 
-     const activeOrder = activeOrders[0] || null;
+            const activeOrders = sortOrdersByCreatedAtDesc(
+                userOrders.filter((order) => {
+                    const status = normalizeText((order && order.status) || "");
+                    return status !== normalizeText("Dostavljeno") &&
+                        status !== normalizeText("Otkazano");
+                }),
+            );
 
-     // --- ZADNJA DOSTAVLJENA ---
-     const completedOrders = sortOrdersByCreatedAtDesc(
-       userOrders.filter((order) =>
-         normalizeText(order?.status || "") === normalizeText("Dostavljeno")
-       )
-     );
+            const activeOrder = activeOrders[0] || null;
 
-     const lastDeliveredOrder = completedOrders[0] || null;
-     const lastDeliveredOrderItems = getOrderItems(lastDeliveredOrder);
-          const allUserOrdersSorted = sortOrdersByCreatedAtDesc(userOrders);
-     const lastAnyOrder = allUserOrdersSorted[0] || null;
-     const lastAnyOrderItems = getOrderItems(lastAnyOrder);
+            // --- ZADNJA DOSTAVLJENA ---
+            const completedOrders = sortOrdersByCreatedAtDesc(
+                userOrders.filter((order) =>
+                    normalizeText((order && order.status) || "") === normalizeText("Dostavljeno"),
+                ),
+            );
 
+            const lastDeliveredOrder = completedOrders[0] || null;
+            const lastDeliveredOrderItems = getOrderItems(lastDeliveredOrder);
+            const allUserOrdersSorted = sortOrdersByCreatedAtDesc(userOrders);
+            const lastAnyOrder = allUserOrdersSorted[0] || null;
+            const lastAnyOrderItems = getOrderItems(lastAnyOrder);
 
-if (action === "open_home") {
-  return buildHomeResponse(nickname);
-}
+            const menuContext = {
+                foods,
+                drinks,
+            };
+            if (mode === "new_order" && !action && message === "Htio bih nešto naručiti") {
+                return buildResponse(
+                    "new_order_mode",
+                    `${nickname}, super. Napiši što bi htio naručiti, npr. "složi mi ručak za 2 osobe" ili "htio bih juhu, paštu i meso".`,
+                    [],
+                    buildHomeResponse(nickname).actions,
+                    { mode: "new_order" },
+                );
+            }
 
-if (action === "open_last_delivered_order") {
-  return buildLastDeliveredOrderResponse(nickname, lastDeliveredOrderItems);
-}
+            if (mode === "order_history" && !action && message === "Moje prethodne narudžbe") {
+                return buildOrderHistoryResponse(nickname, userOrders);
+            }
 
-if (action === "open_last_any_order") {
-  return buildLastAnyOrderResponse(nickname, lastAnyOrder);
-}
+            if (mode === "popular" && !action && message === "Što je popularno") {
+                const items = buildPopularItems(allOrders, foods, drinks, 3);
+                const popularItemNames = extractPopularItemNames(items);
 
-if (action === "repeat_last_order_submit") {
-  return buildResponse(
-    "repeat_last_order_submit",
-    lastDeliveredOrderItems.length > 0 ?
-      `${nickname}, želiš li odmah poslati ovu narudžbu u kuhinju: ${lastDeliveredOrderItems.join(", ")}?` :
-      `${nickname}, ne mogu pronaći tvoju zadnju dostavljenu narudžbu.`,
-    lastDeliveredOrderItems,
-    []
-  );
-}
+                return buildResponse(
+                    "popular_items",
+                    items.length > 0 ?
+                        `${nickname}, trenutno su najpopularniji artikli:\n\n${items.map((item) => `- ${item}`).join("\n")}` :
+                        `${nickname}, trenutno nemam dovoljno podataka o popularnim artiklima.`,
+                    popularItemNames,
+                    popularItemNames.length > 0 ?
+                        buildRecommendationItemActionsWhenChoosingWhatIsPopular(popularItemNames, "recommend_popular") :
+                        buildHomeResponse(nickname).actions,
+                );
+            }
 
-if (action === "repeat_last_order_to_cart") {
-  return buildResponse(
-    "repeat_last_order_to_cart",
-    lastDeliveredOrderItems.length > 0 ?
-      `${nickname}, mogu prebaciti tvoju zadnju dostavljenu narudžbu u košaricu za prilagodbu: ${lastDeliveredOrderItems.join(", ")}. Želiš li to?` :
-      `${nickname}, ne mogu pronaći tvoju zadnju dostavljenu narudžbu.`,
-    lastDeliveredOrderItems,
-    []
-  );
-}
-
-if (action === "repeat_last_any_order_submit") {
-  return buildResponse(
-    "repeat_last_any_order_submit",
-    lastAnyOrderItems.length > 0 ?
-      `${nickname}, želiš li odmah poslati ovu narudžbu u kuhinju: ${lastAnyOrderItems.join(", ")}?` :
-      `${nickname}, ne mogu pronaći tvoju zadnju narudžbu.`,
-    lastAnyOrderItems,
-    []
-  );
-}
-
-if (action === "repeat_last_any_order_to_cart") {
-  return buildResponse(
-    "repeat_last_any_order_to_cart",
-    lastAnyOrderItems.length > 0 ?
-      `${nickname}, mogu prebaciti tvoju zadnju narudžbu u košaricu za prilagodbu: ${lastAnyOrderItems.join(", ")}. Želiš li to?` :
-      `${nickname}, ne mogu pronaći tvoju zadnju narudžbu.`,
-    lastAnyOrderItems,
-    []
-  );
-}
-
-if (action === "open_personal_recommendations") {
-  return buildRecommendationTypeMenuResponse(nickname);
-}
-
-   if (action === "recommend_favorites") {
-     const items = buildFavoritesRecommendations(userOrders, foods, drinks, 3);
-
-     return buildRecommendationResultResponse(
-       "personal_recommendations",
-       nickname,
-       items,
-       `${nickname}, još nemam dovoljno tvojih prošlih dostavljenih narudžbi za ovu vrstu preporuke.`,
-       (resultItems) =>
-         resultItems.length === 1 ?
-           `${nickname}, preporučujem: ${resultItems[0]}. Ovu preporuku temeljim na tvojim prošlim dostavljenim narudžbama i artiklima koje si najčešće birao.` :
-           `${nickname}, na temelju tvojih prošlih dostavljenih narudžbi preporučujem: ${resultItems.join(", ")}. To su artikli koje si najčešće birao.`,
-       "recommend_favorites"
-     );
-   }
-
-if (action === "recommend_popular") {
-  const items = buildPopularItems(allOrders, foods, drinks, 3);
-  const popularItemNames = extractPopularItemNames(items);
-
-  return buildResponse(
-    "popular_items",
-    items.length > 0 ?
-      `${nickname}, trenutno su najpopularniji artikli:\n\n${items.map((item) => `- ${item}`).join("\n")}\n\nTo su artikli koji se najčešće naručuju među svim gostima.` :
-      `${nickname}, trenutačno nemam dovoljno podataka o popularnim artiklima.`,
-    popularItemNames,
-    popularItemNames.length > 0
-      ? buildRecommendationItemActionsWhenChoosingWhatIsPopular(popularItemNames, "recommend_popular")
-      : [buildAction("open_home", "Početak")]
-  );
-}
-
-if (action === "recommend_new") {
-  const items = buildNewRecommendations(userOrders, foods, drinks, 3);
-
-  return buildRecommendationResultResponse(
-    "personal_recommendations",
-    nickname,
-    items,
-    `${nickname}, još nemam dovoljno tvojih prošlih dostavljenih narudžbi da preporučim nešto novo baš prema tvom ukusu.`,
-    (resultItems) =>
-      resultItems.length === 1 ?
-        `${nickname}, za isprobati nešto novo preporučujem: ${resultItems[0]}.` :
-        `${nickname}, ako želiš isprobati nešto novo, preporučujem: ${resultItems.join(", ")}.`,
-    "recommend_new"
-  );
-}
+            if (message && !action && isSmallTalk(message)) {
+                return buildResponse(
+                    "reply",
+                    `${nickname}, bok. Mogu ti pomoći s jelovnikom, cijenama, alergenima, preporukama, košaricom i narudžbom. Samo napiši što želiš.`,
+                    [],
+                    [],
+                );
+            }
 
 
-if (action.startsWith("pick_recommendation|")) {
-  const parts = action.split("|");
-  const sourceAction = parts[1];
-  const selectedItem = parts[2];
+            if (message && !action && isMealBuilderPlanStart(message)) {
+                const plan = createMealBuilderPlan(message);
+                const part = getCurrentMealPart(plan);
 
-  const availableNames = buildMenuNameSet(foods, drinks);
+                if (part) {
+                    return buildMealPartQuestion({
+                        nickname,
+                        part,
+                        foods,
+                        plan,
+                        buildResponse,
+                        drinks,
+                    });
+                }
+            }
 
-  if (!sourceAction || !selectedItem || !availableNames.has(selectedItem)) {
-    return buildResponse(
-      "reply",
-      `${nickname}, ne mogu pronaći odabranu preporuku.`,
-      [],
-      [buildAction("open_home", "Početak")]
+            const mealContext = getLastMealBuilderContext(history);
+
+
+            console.log("BEFORE MOD CHECK:", message);
+
+            if (message && !action && isAskingItemModifications(message)) {
+                console.log("MOD QUESTION HIT:", message);
+
+               const menu = [].concat(foods || [], drinks || []);
+
+               const item = menu.find((menuItem) => {
+                   const itemName = normalizeText(menuItem.name || "");
+                   const aliases = Array.isArray(menuItem.aliasi) ? menuItem.aliasi : [];
+
+                   return (
+                       itemName && normalizeText(message).includes(itemName)
+                   ) || aliases.some((alias) =>
+                       normalizeText(message).includes(normalizeText(alias)),
+                   );
+               });
+
+                console.log("MOD ITEM FOUND:", item && item.name);
+
+                if (item) {
+                    const options = getModificationOptionsForItem(item.name, modifications);
+
+                    console.log("MOD OPTIONS:", JSON.stringify(options));
+
+                    if (options.length > 0) {
+                        return buildResponse(
+                            "item_modifications",
+                            `${nickname}, za ${item.name} mogu ponuditi:\n\n${options
+                                .map((option) => `- ${option}`)
+                                .join("\n")}`,
+                            options,
+                            [],
+                            {
+                                lastSuggestedItems: [item.name],
+                            },
+                        );
+                    }
+                }
+            }
+
+            if (
+                message &&
+                !action &&
+                mealContext.plan &&
+                mealContext.currentItem &&
+                isConfirmSuggestedItemIntent(message)) {
+                const itemName = mealContext.currentItem;
+
+                const nextPlan = advanceMealBuilderPlan(mealContext.plan, {
+                    selectedItem: `${itemName}(X1)`,
+                    setIndex: Number(mealContext.plan.currentIndex || 0) + 1,
+                });
+
+                const nextPart = getCurrentMealPart(nextPlan);
+
+                if (!nextPart) {
+                    return buildResponse(
+                        "chat_order_added",
+                        `${nickname}, dodao sam ${itemName}.\n\nTo je sve što smo planirali. Želiš li još nešto?`,
+                        [`${itemName}(X1)`],
+                        [buildAction("go_to_cart", "Završi narudžbu")],
+                       {
+                           mealBuilderPlan: null,
+                           mealBuilderCurrentPart: null,
+                           mealBuilderCurrentItem: null,
+                           lastSuggestedItems: [],
+                       },
+                    );
+                }
+                console.log("MEAL BUILDER NEXT PART:", nextPart);
+                const nextItems = getItemsForMealPart(nextPart, foods, drinks);
+                const offered = nextItems.slice(0, 5).map((item) => item.name);
+
+                return buildResponse(
+                    "chat_order_added",
+                    `${nickname}, dodao sam ${itemName}.\n\nSada idemo na ${nextPart}. Mogu ponuditi:\n\n${offered
+                        .map((name) => `- ${name}`)
+                        .join("\n")}\n\nKoju želiš?`,
+                    [`${itemName}(X1)`],
+                    [buildAction("go_to_cart", "Završi narudžbu")],
+                    {
+                        mealBuilderPlan: nextPlan,
+                        lastSuggestedItems: offered,
+                        mealBuilderCurrentPart: nextPart,
+                    },
+                );
+
+            }
+
+const normalizedMealAnswer = normalizeText(message);
+
+if (
+  message &&
+  !action &&
+  mealContext.plan &&
+  mealContext.currentPart &&
+  (
+    normalizedMealAnswer === "ne" ||
+    normalizedMealAnswer === "nemoj" ||
+    normalizedMealAnswer === "preskoci" ||
+    normalizedMealAnswer === "preskoci" ||
+    normalizedMealAnswer.includes("necu") ||
+    normalizedMealAnswer.includes("nijednu") ||
+    normalizedMealAnswer.includes("nista") ||
+    normalizedMealAnswer.includes("ne zelim") ||
+    normalizedMealAnswer.includes("ne želim")
+  )
+) {
+                const nextPlan = advanceMealBuilderPlan(mealContext.plan, {
+                    skippedPart: mealContext.currentPart,
+                    setIndex: Number(mealContext.plan.currentIndex || 0) + 1,
+                });
+
+                const nextPart = getCurrentMealPart(nextPlan);
+
+                if (!nextPart) {
+                    return buildResponse(
+                        "meal_builder_finished",
+                        `${nickname}, u redu, preskočili smo ${mealContext.currentPart}. To je sve iz plana. Želiš li još nešto?`,
+                        [],
+                        [],
+                       {
+                         mealBuilderPlan: null,
+                         mealBuilderCurrentPart: null,
+                         mealBuilderCurrentItem: null,
+                         lastSuggestedItems: [],
+                       }
+                    );
+                }
+
+                console.log("MEAL BUILDER NEXT PART:", nextPart);
+                const nextItems = getItemsForMealPart(nextPart, foods, drinks);
+                const offered = nextItems.slice(0, 5).map((item) => item.name);
+
+            return buildResponse(
+                "meal_builder_step",
+                `${nickname}, u redu.\n\nSada idemo na ${nextPart}. Mogu ponuditi:\n\n${offered
+                    .map((name) => `- ${name}`)
+                    .join("\n")}\n\nKoju želiš?`,
+                [],
+                [],
+                {
+                    mealBuilderPlan: nextPlan,
+                    lastSuggestedItems: offered,
+                    mealBuilderCurrentPart: nextPart,
+                },
+            );
+            }
+
+
+
+
+       const lastAssistant = [...history]
+           .reverse()
+           .find((item) =>
+               item &&
+               (item.role === "assistant" || item.sender === "assistant")
+           );
+
+         const pendingSuggestedQuantity =
+             lastAssistant &&
+             lastAssistant.metadata &&
+             lastAssistant.metadata.pendingSuggestedQuantity ?
+                 lastAssistant.metadata.pendingSuggestedQuantity :
+                 1;
+
+         const shouldAskQuantityAfterSuggestion =
+             lastAssistant &&
+             lastAssistant.metadata &&
+             lastAssistant.metadata.shouldAskQuantityAfterSuggestion === true;
+
+
+
+
+            const lastSuggestedItems = getLastSuggestedItems(history);
+            const isNewRecommendationRequest =
+                message &&
+                !action &&
+                isAskingRecommendations(message);
+
+            const isNewPopularRequest =
+                message &&
+                !action &&
+                isAskingPopularItems(message);
+
+            const isNewMenuBrowseRequest =
+                message &&
+                !action &&
+                (
+                    normalizeText(message).includes("sta imas") ||
+                    normalizeText(message).includes("što imaš") ||
+                    normalizeText(message).includes("sto imas") ||
+                    normalizeText(message).includes("koje imas") ||
+                    normalizeText(message).includes("koje imaš") ||
+                    normalizeText(message).includes("pokazi") ||
+                    normalizeText(message).includes("pokaži")
+                );
+
+            const shouldIgnoreOldSuggestions =
+                isNewRecommendationRequest ||
+                isNewPopularRequest ||
+                isNewMenuBrowseRequest;
+            console.log("SUGGESTION BLOCK CHECK");
+            console.log("MESSAGE:", message);
+            console.log("ACTION:", action);
+            console.log("LAST ITEMS:", JSON.stringify(lastSuggestedItems));
+            console.log(
+                "IS_CONFIRM:",
+                isConfirmSuggestedItemIntent(message),
+            );
+            console.log("LAST SUGGESTED ITEMS:", JSON.stringify(lastSuggestedItems));
+            console.log("CONFIRM SUGGESTION:", isConfirmSuggestedItemIntent(message));
+            console.log("MESSAGE:", message);
+
+          if (
+              message &&
+              !action &&
+              !mealContext.plan &&
+              lastSuggestedItems.length > 0 &&
+              !shouldIgnoreOldSuggestions &&
+              isConfirmSuggestedItemIntent(message)
+          ) {
+                console.log("SUGGESTION ACCEPTED");
+                const firstItem = lastSuggestedItems[0];
+
+               return buildResponse(
+                   "ask_quantity",
+                   `${nickname}, koliko komada želiš za ${firstItem}?`,
+                   [],
+                   [],
+                   {
+                       pendingQuantityItem: firstItem,
+                       lastSuggestedItems: [],
+                   },
+               );
+            }
+
+            const suggestedIndex = getSuggestedItemIndexFromMessage(message);
+
+            if (
+                message &&
+                !action &&
+                !isAskingRecommendations(message) &&
+                lastSuggestedItems.length > 0 &&
+                !shouldIgnoreOldSuggestions &&
+                suggestedIndex >= 0 &&
+                lastSuggestedItems[suggestedIndex]
+            ) {
+                const itemName = lastSuggestedItems[suggestedIndex];
+                if (mealContext.plan && mealContext.currentPart) {
+                    const nextPlan = advanceMealBuilderPlan(mealContext.plan, {
+                        selectedItem: `${itemName}(X1)`,
+                        setIndex: Number(mealContext.plan.currentIndex || 0) + 1,
+                    });
+
+                    const nextPart = getCurrentMealPart(nextPlan);
+
+                   if (!nextPart) {
+                       return buildResponse(
+                           "chat_order_added",
+                           `${nickname}, dodao sam ${itemName}.\n\nTo je sve što smo planirali. Želiš li još nešto?`,
+                           [`${itemName}(X1)`],
+                           [buildAction("go_to_cart", "Završi narudžbu")],
+                           {
+                               mealBuilderPlan: null,
+                               mealBuilderCurrentPart: null,
+                               mealBuilderCurrentItem: null,
+                               lastSuggestedItems: [],
+                           },
+                       );
+                   }
+                    console.log("MEAL BUILDER NEXT PART:", nextPart);
+                    const nextItems = getItemsForMealPart(nextPart, foods, drinks);
+                    const offered = nextItems.slice(0, 5).map((item) => item.name);
+
+                    return buildResponse(
+                        "chat_order_added",
+                        `${nickname}, dodao sam ${itemName}.\n\nSada idemo na ${nextPart}. Mogu ponuditi:\n\n${offered
+                            .map((name) => `- ${name}`)
+                            .join("\n")}\n\nKoju želiš?`,
+                        [`${itemName}(X1)`],
+                        [buildAction("go_to_cart", "Završi narudžbu")],
+                        {
+                            mealBuilderPlan: nextPlan,
+                            lastSuggestedItems: offered,
+                            mealBuilderCurrentPart: nextPart,
+                        },
+                    );
+                }
+
+              return buildResponse(
+                  "ask_quantity",
+                  `${nickname}, koliko komada želiš za ${itemName}?`,
+                  [],
+                  [],
+                  {
+                      pendingQuantityItem: itemName,
+                      pendingSuggestedQuantity: null,
+                      lastSuggestedItems: [],
+                  },
+              );
+            }
+
+
+            const suggestedItemFromText = resolveSuggestedItemFromMessage(
+                message,
+                lastSuggestedItems,
+            );
+
+
+
+            const wantsRecommendationsFromHistory =
+                normalizedMealAnswer.includes("proslim narudzbama") ||
+                normalizedMealAnswer.includes("prošlim narudžbama") ||
+                normalizedMealAnswer.includes("prema proslim") ||
+                normalizedMealAnswer.includes("prema prošlim") ||
+                normalizedMealAnswer.includes("po proslim") ||
+                normalizedMealAnswer.includes("po prošlim") ||
+                normalizedMealAnswer.includes("mojim narudzbama") ||
+                normalizedMealAnswer.includes("mojim narudžbama") ||
+                normalizedMealAnswer.includes("po mom ukusu");
+
+            if (message && !action && wantsRecommendationsFromHistory) {
+                const grouped = buildFavoritesRecommendationsGrouped(
+                    userOrders,
+                    foods,
+                    drinks,
+                );
+
+
+                const sections = [];
+
+                if (grouped.predjelo.length) {
+                    sections.push(
+                        `Od predjela ti predlažem:\n${grouped.predjelo.map((i) => `- ${i}`).join("\n")}`,
+                    );
+                }
+
+                if (grouped.glavno.length) {
+                    sections.push(
+                        `Od glavnog jela ti predlažem:\n${grouped.glavno.map((i) => `- ${i}`).join("\n")}`,
+                    );
+                }
+
+                if (grouped.desert.length) {
+                    sections.push(
+                        `Od deserta ti predlažem:\n${grouped.desert.map((i) => `- ${i}`).join("\n")}`,
+                    );
+                }
+
+                if (grouped.pice.length) {
+                    sections.push(
+                        `Od pića ti predlažem:\n${grouped.pice.map((i) => `- ${i}`).join("\n")}`,
+                    );
+                }
+
+                const suggestedItems = [
+                    ...grouped.predjelo,
+                    ...grouped.glavno,
+                    ...grouped.desert,
+                    ...grouped.pice,
+                ];
+
+              return buildResponse(
+                  "personal_recommendations",
+                  suggestedItems.length > 0 ?
+                      `${nickname}, po tvojim prošlim narudžbama mogu ti preporučiti:\n\n${sections.join("\n\n")}` :
+                      `${nickname}, još nemam dovoljno tvojih prošlih dostavljenih narudžbi za osobnu preporuku.`,
+                  suggestedItems,
+                  [],
+                  {
+                      lastSuggestedItems: suggestedItems,
+                  },
+              );
+            }
+
+
+       const pendingQuantityItem =
+           lastAssistant &&
+           lastAssistant.metadata &&
+           lastAssistant.metadata.pendingQuantityItem ?
+               lastAssistant.metadata.pendingQuantityItem :
+               "";
+
+       const pendingQuantityItems =
+           lastAssistant &&
+           lastAssistant.metadata &&
+           Array.isArray(lastAssistant.metadata.pendingQuantityItems) ?
+               lastAssistant.metadata.pendingQuantityItems :
+               [];
+
+       if (
+           message &&
+           !action &&
+           (pendingQuantityItem || pendingQuantityItems.length > 0)
+       ) {
+
+       const pendingCancelText = normalizeText(message);
+
+       if (
+           pendingCancelText === "ne" ||
+           pendingCancelText === "necu" ||
+           pendingCancelText === "neću" ||
+           pendingCancelText.includes("ne zelim") ||
+           pendingCancelText.includes("ne želim") ||
+           pendingCancelText.includes("odustani") ||
+           pendingCancelText.includes("prekini") ||
+           isAskingRecommendations(message) ||
+           isAskingPopularItems(message) ||
+           isAskingCart(message)
+       ) {
+           return buildResponse(
+               "flow_cancelled",
+               `${nickname}, u redu, neću dodati taj artikl. Što želiš dalje?`,
+               [],
+               [],
+               {
+                   pendingQuantityItem: null,
+                   pendingQuantityItems: [],
+                   lastSuggestedItems: [],
+                   shouldAskQuantityAfterSuggestion: false,
+               },
+           );
+       }
+
+
+           const quantity = extractQuantity(message);
+
+           const currentPendingItem = pendingQuantityItems.length > 0 ?
+               pendingQuantityItems[0] :
+               pendingQuantityItem;
+
+           const remainingItems = pendingQuantityItems.length > 0 ?
+               pendingQuantityItems.slice(1) :
+               [];
+
+           if (quantity) {
+               const addedItem = `${currentPendingItem}(X${quantity})`;
+
+               if (remainingItems.length > 0) {
+                   return buildResponse(
+                       "chat_order_added",
+                       `${nickname}, dodao sam:\n\n- ${currentPendingItem}${quantity > 1 ? ` x${quantity}` : ""}\n\nKoliko komada želiš za ${remainingItems[0]}?`,
+                       [addedItem],
+                       [],
+                       {
+                           pendingQuantityItems: remainingItems,
+                           pendingQuantityItem: null,
+                           lastSuggestedItems: [],
+                       },
+                   );
+               }
+
+               return buildResponse(
+                   "chat_order_added",
+                   `${nickname}, dodao sam:\n\n- ${currentPendingItem}${quantity > 1 ? ` x${quantity}` : ""}\n\nŽeliš li još nešto?`,
+                   [addedItem],
+                   [buildAction("go_to_cart", "Završi narudžbu")],
+                   {
+                       pendingQuantityItems: [],
+                       pendingQuantityItem: null,
+                       lastSuggestedItems: [],
+                   },
+               );
+           }
+
+          return buildResponse(
+              "ask_quantity",
+              `${nickname}, trenutno biramo količinu za ${currentPendingItem}.\n\nNapiši broj komada, npr. 1, 2 ili 3.\n\nAko ne želiš nastaviti s ovim artiklom, napiši "odustani", "prekini" ili "ne želim".`,
+              [],
+              [],
+              {
+                  pendingQuantityItems: pendingQuantityItems.length > 0 ?
+                      pendingQuantityItems :
+                      [pendingQuantityItem],
+                  pendingQuantityItem: null,
+                  lastSuggestedItems: [],
+              },
+          );
+       }
+
+            const requestedMenuPart = getRequestedMenuPart(message);
+
+            const genericCategoryWords = [
+                "zelim", "želim", "daj", "dodaj", "mi", "molim", "hocu", "hoću",
+                "pizzu", "pizza", "pizze",
+                "sendvic", "sendvič", "sendvica", "sendviča",
+                "desert", "deserta",
+                "salatu", "salata",
+                "kavu", "kava",
+                "meso", "mesno", "glavno",
+                "sok", "pice", "piće",
+            ];
+
+            const isGenericCategoryRequest =
+                requestedMenuPart &&
+                normalizeText(message)
+                    .split(/\s+/)
+                    .filter((word) => word.length > 2)
+                    .every((word) => genericCategoryWords.includes(word));
+
+            if (
+                message &&
+                !action &&
+                requestedMenuPart &&
+                isGenericCategoryRequest &&
+                !mealContext.plan
+            ) {
+                const items = getItemsForMealPart(
+                    requestedMenuPart,
+                    foods,
+                    drinks,
+                );
+
+                const offered = items
+                    .slice(0, 5)
+                    .map((item) => item.name);
+
+                if (offered.length > 0) {
+                    return buildResponse(
+                        "category_offer",
+                        `${nickname}, prvo odaberi ${requestedMenuPart} koju želiš:\n\n${offered
+                             .map((name) => `- ${name}`)
+                             .join("\n")}\n\nNakon toga ćemo definirati količinu.`,
+                        [],
+                        [],
+
+
+                      {
+                          lastSuggestedItems: offered,
+                      }
+                    );
+                }
+            }
+
+            function findMenuItemsFromMessage(message, foods, drinks) {
+              const text = normalizeText(message || "");
+              const menu = [].concat(foods || [], drinks || []);
+
+              return menu.filter((item) => {
+                const name = normalizeText(item.name || "");
+
+                if (!name) return false;
+
+                const words = name
+                    .split(/\s+/)
+                    .filter((word) => word.length > 2);
+
+                const matches = words.filter((word) =>
+                  text.includes(word),
+                );
+
+                return matches.length >= Math.max(1, words.length - 1);
+              });
+            }
+
+            function findMenuItemsFromMessageParts(message, foods, drinks) {
+                const parts = normalizeText(message || "")
+                    .split(/\s+i\s+|,|;/)
+                    .map((part) => part.trim())
+                    .filter(Boolean);
+
+                const items = [];
+
+                parts.forEach((part) => {
+                    const item = findMenuItemFromMessage(part, foods, drinks);
+
+                    if (
+                        item &&
+                        !items.some((existing) =>
+                            normalizeText(existing.name) === normalizeText(item.name),
+                        )
+                    ) {
+                        items.push(item);
+                    }
+                });
+
+                return items;
+            }
+
+            if (
+                message &&
+                !action &&
+                mealContext.plan &&
+                mealContext.currentPart &&
+                lastSuggestedItems.length > 0
+            ) {
+                const mealBuilderItem = resolveSuggestedItemFromMessage(
+                    message,
+                    lastSuggestedItems,
+                );
+
+                if (mealBuilderItem) {
+                    const nextPlan = advanceMealBuilderPlan(mealContext.plan, {
+                        selectedItem: `${mealBuilderItem}(X1)`,
+                        setIndex: Number(mealContext.plan.currentIndex || 0) + 1,
+                    });
+
+                    const nextPart = getCurrentMealPart(nextPlan);
+
+                    if (!nextPart) {
+                        return buildResponse(
+                            "chat_order_added",
+                            `${nickname}, dodao sam ${mealBuilderItem}.\n\nTo je sve što smo planirali. Želiš li još nešto?`,
+                            [`${mealBuilderItem}(X1)`],
+                            [buildAction("go_to_cart", "Završi narudžbu")],
+                            {
+                                mealBuilderPlan: null,
+                                mealBuilderCurrentPart: null,
+                                mealBuilderCurrentItem: null,
+                                lastSuggestedItems: [],
+                            },
+                        );
+                    }
+
+                    const nextItems = getItemsForMealPart(nextPart, foods, drinks);
+                    const offered = nextItems.slice(0, 5).map((item) => item.name);
+
+                    return buildResponse(
+                        "chat_order_added",
+                        `${nickname}, dodao sam ${mealBuilderItem}.\n\nSada idemo na ${nextPart}. Mogu ponuditi:\n\n${offered
+                            .map((name) => `- ${name}`)
+                            .join("\n")}\n\nKoju želiš?`,
+                        [`${mealBuilderItem}(X1)`],
+                        [],
+                        {
+                            mealBuilderPlan: nextPlan,
+                            lastSuggestedItems: offered,
+                            mealBuilderCurrentPart: nextPart,
+                            mealBuilderCurrentItem: null,
+                        },
+                    );
+                }
+            }
+
+          const exactMenuItems = findMenuItemsFromMessageParts(
+              message,
+              foods,
+              drinks,
+          );
+
+        if (
+            message &&
+            !action &&
+            exactMenuItems.length > 1 &&
+            !mealContext.plan &&
+            !isGenericCategoryRequest
+        ) {
+            const itemNames = exactMenuItems.map((item) => item.name);
+
+            return buildResponse(
+                "ask_quantity",
+                `${nickname}, koliko komada želiš za ${itemNames[0]}?`,
+                [],
+                [],
+                {
+                    pendingQuantityItems: itemNames,
+                    lastSuggestedItems: [],
+                },
+            );
+        }
+
+if (
+                message &&
+                !action &&
+                !isAskingRecommendations(message) &&
+                lastSuggestedItems.length > 0 &&
+                !shouldIgnoreOldSuggestions &&
+                suggestedItemFromText
+              ) {
+               if (mealContext.plan && mealContext.currentPart) {
+                   const note = extractNote(message);
+
+                   const selectedTextItem = note ?
+                       `${suggestedItemFromText}\n\nNAPOMENA: ${note} (X1)` :
+                       `${suggestedItemFromText}(X1)`;
+
+                   const displayItem = note ?
+                       `${suggestedItemFromText} (${note})` :
+                       suggestedItemFromText;
+
+                   const nextPlan = advanceMealBuilderPlan(mealContext.plan, {
+                       selectedItem: selectedTextItem,
+                       setIndex: Number(mealContext.plan.currentIndex || 0) + 1,
+                   });
+
+                    const nextPart = getCurrentMealPart(nextPlan);
+
+                    if (!nextPart) {
+                        return buildResponse(
+                            "chat_order_added",
+                            `${nickname}, dodao sam ${displayItem}.\n\nTo je sve što smo planirali. Želiš li još nešto?`,
+                            [selectedTextItem],
+                            [buildAction("go_to_cart", "Završi narudžbu")],
+                          {
+                            mealBuilderPlan: null,
+                            mealBuilderCurrentPart: null,
+                            mealBuilderCurrentItem: null,
+                            lastSuggestedItems: [],
+                          },
+                        );
+                    }
+
+                    const nextItems = getItemsForMealPart(nextPart, foods, drinks);
+                    const offered = nextItems.slice(0, 5).map((item) => item.name);
+
+                    return buildResponse(
+                        "chat_order_added",
+                        `${nickname}, dodao sam ${displayItem}.\n\nSada idemo na ${nextPart}. Mogu ponuditi:\n\n${offered
+                            .map((name) => `- ${name}`)
+                            .join("\n")}\n\nKoju želiš?`,
+                       [selectedTextItem],
+                        [buildAction("go_to_cart", "Završi narudžbu")],
+                        {
+                            mealBuilderPlan: nextPlan,
+                            lastSuggestedItems: offered,
+                            mealBuilderCurrentPart: nextPart,
+                        },
+                    );
+                }
+
+           return buildResponse(
+               "ask_quantity",
+               `${nickname}, koliko komada želiš za ${suggestedItemFromText}?`,
+               [],
+               [],
+               {
+                   pendingQuantityItem: suggestedItemFromText,
+                   lastSuggestedItems: [],
+               },
+           );
+            }
+
+       const normalizedForParser = normalizeText(message);
+
+       const shouldTryOrderParser =
+           message &&
+           !action &&
+           !mealContext.plan &&
+           !isGenericCategoryRequest &&
+           !shouldIgnoreOldSuggestions &&
+           !isAskingRecommendations(message) &&
+           !isAskingPopularItems(message) &&
+           !isAskingCart(message) &&
+           !isAskingOrderStatus(message) &&
+           !isFinishOrderIntent(message) &&
+           (
+               extractQuantity(message) ||
+               normalizedForParser.includes(" bez ") ||
+               normalizedForParser.includes(" sa ") ||
+               normalizedForParser.includes(" s ") ||
+               normalizedForParser.includes(" za van") ||
+               normalizedForParser.includes(" i ")
+           );
+
+       if (shouldTryOrderParser) {
+           const parsedOrder = await parseOrderFromMessage({
+               apiKey: openAiKey,
+               message,
+               foods,
+               drinks,
+               modifications,
+           });
+
+           if (
+               parsedOrder &&
+               Array.isArray(parsedOrder.items) &&
+               parsedOrder.items.length > 0
+           ) {
+               return buildResponse(
+                   "chat_order_added",
+                  `${nickname}, dodao sam:\n\n${parsedOrder.items
+                      .map((item) => `- ${item
+                          .replace(/\(X\d+\)/i, "")
+                          .trim()
+                          .split("\n")
+                          .map((line, index) => index === 0 ? line : `  ${line}`)
+                          .join("\n")}`)
+                      .join("\n\n")}\n\nŽeliš li još nešto?`,
+                   parsedOrder.items,
+                   [buildAction("go_to_cart", "Završi narudžbu")],
+                   {
+                       lastSuggestedItems: [],
+                       pendingQuantityItem: null,
+                       pendingQuantityItems: [],
+                   },
+               );
+           }
+       }
+
+       const isItemInfoQuestion =
+           normalizeText(message).includes("sto je") ||
+           normalizeText(message).includes("što je") ||
+           normalizeText(message).includes("sta je") ||
+           normalizeText(message).includes("šta je") ||
+           normalizeText(message).includes("sta je to") ||
+           normalizeText(message).includes("šta je to") ||
+           normalizeText(message).includes("koji su sastojci") ||
+           normalizeText(message).includes("sastojci") ||
+           normalizeText(message).includes("objasni") ||
+           normalizeText(message).includes("kakav je") ||
+           normalizeText(message).includes("opis");
+
+
+        const exactMenuItem = findMenuItemFromMessage(
+            message,
+            foods,
+            drinks,
+        );
+
+      if (
+          message &&
+          !action &&
+          exactMenuItem &&
+          !mealContext.plan &&
+          !isGenericCategoryRequest &&
+          !isItemInfoQuestion
+      ) {
+             const quantity = extractQuantity(message);
+
+             if (!quantity) {
+                 return buildResponse(
+                     "ask_quantity",
+                     `${nickname}, koliko ${exactMenuItem.name} želiš?`,
+                     [],
+                     [],
+                     {
+                         pendingQuantityItem: exactMenuItem.name,
+                         lastSuggestedItems: [],
+                     },
+                 );
+             }
+
+             const addedItems = [`${exactMenuItem.name}(X${quantity})`];
+
+             const cartSuggestions = buildCartBasedSuggestions({
+                 cartItems,
+                 addedItems,
+                 foods,
+                 drinks,
+             });
+
+             const suggestionText = buildCartBasedSuggestionsText(cartSuggestions);
+
+             return buildResponse(
+                 "chat_order_added",
+                 `${nickname}, dodao sam:\n\n- ${exactMenuItem.name}${quantity > 1 ? ` x${quantity}` : ""}${suggestionText}\n\nŽeliš li još nešto?`,
+                 addedItems,
+                 [buildAction("go_to_cart", "Završi narudžbu")],
+                 {
+                     lastSuggestedItems: cartSuggestions,
+                 },
+             );
+         }
+
+
+             const conversationPlan = message && !action ?
+                await planConversation({
+                    apiKey: openAiKey,
+                    message,
+                    menuContext,
+                    cartItems,
+                    historyText,
+                }) :
+                {
+                    intent: "unknown",
+                    category: "",
+                    items: [],
+                    reply: "",
+                    suggestions: [],
+                    needsClarification: false,
+                    confidence: 0,
+                };
+
+            console.log("CONVERSATION PLAN:", JSON.stringify(conversationPlan));
+
+            const requestPlan = {
+                intent: "unknown",
+                category: "",
+                items: [],
+                needsClarification: false,
+                clarificationQuestion: "",
+                confidence: 0,
+            };
+
+            if (message && !action && isRepeatDisplayedOrderIntent(message)) {
+                const assistantMessages = history
+                    .filter((item) =>
+                        item.role === "assistant" || item.sender === "assistant",
+                    )
+                    .reverse();
+
+                let orderKey = "";
+
+                for (const msg of assistantMessages) {
+                    if (msg.metadata && msg.metadata.orderId) {
+                        orderKey = msg.metadata.orderId;
+                        break;
+                    }
+                }
+
+                if (!orderKey) {
+                    return buildResponse(
+                        "reply",
+                        `${nickname}, ne znam koju narudžbu želiš ponoviti. Prvo napiši npr. "prikaži narudžbu broj 2".`,
+                        [],
+                        [],
+                    );
+                }
+
+                const selectedOrder = userOrders.find((order) =>
+                    String(order.key || order.id || "") === String(orderKey),
+                );
+
+                if (!selectedOrder) {
+                    return buildResponse(
+                        "reply",
+                        `${nickname}, ne mogu pronaći tu narudžbu za ponovno naručivanje.`,
+                        [],
+                        [],
+                    );
+                }
+
+                const items = getOrderItems(selectedOrder);
+
+                if (!items.length) {
+                    return buildResponse(
+                        "reply",
+                        `${nickname}, ta narudžba nema stavki za ponovno dodavanje.`,
+                        [],
+                        [],
+                    );
+                }
+
+                return buildResponse(
+                    "chat_order_added",
+                    `${nickname}, dodao sam ponovno ovu narudžbu:\n\n${items.map((item) => `- ${extractBaseItemName(item)}`).join("\n")}\n\nŽeliš li još nešto?`,
+                    items,
+                    [],
+                );
+            }
+
+            // Privremeno ugašeno zbog brzine.
+            // if (message && !action && conversationPlan.confidence < 0.75) {
+            //   requestPlan = await planUserRequest({
+            //     apiKey: openAiKey,
+            //     message,
+            //     cartItems,
+            //   });
+            //
+            //   console.log("REQUEST PLAN:", JSON.stringify(requestPlan));
+            // }
+
+
+            if (action === "new_chat") {
+                return buildResponse(
+                    "new_chat_started",
+                    `${nickname}, dobrodošao nazad u chat. Pokrenuli smo novi razgovor, tako da ne nastavljam prethodnu narudžbu. Kako ti mogu pomoći?`,
+                    [],
+                    buildHomeResponse(nickname).actions,
+                );
+            }
+
+
+            if (conversationPlan.intent === "compose_order") {
+
+                const suggestions = buildMealSuggestion({
+                    message,
+                    foods,
+                });
+
+                if (suggestions.length) {
+                    return buildResponse(
+                        "meal_builder",
+                        `${nickname}, predlažem:\n\n${suggestions
+                            .map((item) => `- ${item}`)
+                            .join("\n")}\n\nDa dodam?`,
+                        [],
+                        [],
+                        {
+                            lastSuggestedItems: suggestions,
+                        },
+                    );
+                }
+
+                return buildResponse(
+                    "reply",
+                    `${nickname}, mogu ti pomoći s narudžbom. Reci što bi htio jesti ili piti.`,
+                    [],
+                    [],
+                );
+            }
+
+            const pairingResponse = buildPairingRecommendationResponse({
+                message,
+                nickname,
+                foods,
+                drinks,
+                buildResponse,
+            });
+
+            if (pairingResponse) return pairingResponse;
+
+
+
+            if (isAskingCoffeePairing(message)) {
+                const items = getItemsByTag("uz_kavu", foods, 3);
+
+                return buildResponse(
+                    "recommendation",
+                    `${nickname}, uz kavu bih preporučio:\n\n${items.map((i) => `- ${i.name}`).join("\n")}`,
+                    items.map((i) => i.name),
+                    [],
+                );
+            }
+
+
+
+            if (isMealBuilderIntent(message)) {
+                const suggestions = buildMealSuggestion({
+                    message,
+                    foods,
+                });
+
+                if (suggestions.length) {
+                    return buildResponse(
+                        "meal_builder",
+                        `${nickname}, predlažem:\n\n${suggestions
+                            .map((item) => `- ${item}`)
+                            .join("\n")}\n\nDa dodam?`,
+                        [],
+                        [],
+                        {
+                            lastSuggestedItems: suggestions,
+                        },
+                    );
+                }
+            }
+
+
+            if (conversationPlan.intent === "add_to_cart") {
+                const result = resolveRequestedItems(
+                    conversationPlan.items,
+                    foods,
+                    drinks,
+                );
+
+                if (result.ambiguous.length > 0) {
+                    const first = result.ambiguous[0];
+
+                    return buildResponse(
+                        "clarify_order",
+                        `${nickname}, našao sam više mogućnosti za "${first.requestedName}". Na što si mislio?\n\n${first.options.map((item) => `- ${item.name}`).join("\n")
+                        }`,
+                        [],
+                        first.options.map((item) =>
+                            buildAction(`pick_menu_item|${item.name}|open_menu_browser`, item.name),
+                        ),
+                    );
+                }
+
+                if (result.missing.length > 0) {
+                    const first = result.missing[0];
+
+                    return buildResponse(
+                        "clarify_order",
+                        `${nickname}, ne mogu sigurno pronaći "${first.requestedName}" u meniju. Možeš napisati točan naziv artikla ili pitati za odredenu kategoriju hrane/pica.`,
+                        [],
+                        [],
+                    );
+                }
+
+                if (result.resolvedItems.length > 0) {
+                    const addedItems = result.resolvedItems.map((resolved) =>
+                        `${resolved.item.name}(X${resolved.quantity})`,
+                    );
+
+                    const cartSuggestions = buildCartBasedSuggestions({
+                        cartItems,
+                        addedItems,
+                        foods,
+                        drinks,
+                    });
+
+                    const suggestionText = buildCartBasedSuggestionsText(cartSuggestions);
+
+                    const displayItems = result.resolvedItems.map((resolved) =>
+                        `- ${resolved.item.name}${resolved.quantity > 1 ? ` x${resolved.quantity}` : ""}`,
+                    );
+
+                    return buildResponse(
+                        "chat_order_added",
+                        `${nickname}, dodao sam:\n\n${displayItems.join("\n")}${suggestionText}`,
+                        addedItems,
+                        [
+                            buildAction("go_to_cart", "Završi narudžbu"),
+                        ],
+                        {
+                            lastSuggestedItems: cartSuggestions,
+                        },
+                    );
+                }
+
+                return buildResponse(
+                    "clarify_order",
+                    `${nickname}, što želiš dodati u narudžbu?`,
+                    [],
+                    [],
+                );
+            }
+            if (conversationPlan.intent === "repeat_order_filtered") {
+                const category = conversationPlan.category;
+                const normalizedMessage = normalizeText(message);
+
+                const lastAssistantMessage = history
+                    .filter((item) =>
+                        item.role === "assistant" || item.sender === "assistant",
+                    )
+                    .slice(-1)[0];
+
+                const assistantText =
+                    (lastAssistantMessage &&
+                        (
+                            lastAssistantMessage.content ||
+                            lastAssistantMessage.message ||
+                            lastAssistantMessage.text
+                        )) ||
+                    "";
+
+                const orderKey =
+                    lastAssistantMessage &&
+                        lastAssistantMessage.metadata &&
+                        lastAssistantMessage.metadata.orderId ?
+                        lastAssistantMessage.metadata.orderId :
+                        null;
+                const selectedOrder = userOrders.find((order) =>
+                    String(order.key || order.id || "") === String(orderKey),
+                );
+
+              if (!selectedOrder) {
+                  const suggestedFromText = resolveSuggestedItemFromMessage(
+                      message,
+                      getLastSuggestedItems(history),
+                  );
+
+                  if (suggestedFromText) {
+                      return buildResponse(
+                          "chat_order_added",
+                          `${nickname}, dodao sam ${suggestedFromText}. Želiš li još nešto?`,
+                          [`${suggestedFromText}(X1)`],
+                          [buildAction("go_to_cart", "Završi narudžbu")],
+                          {
+                              lastSuggestedItems: [],
+                          },
+                      );
+                  }
+
+                  return buildResponse(
+                      "reply",
+                      `${nickname}, ako želiš odabrati nešto iz preporuke koju sam ti dao, napiši npr.:
+
+                  - dodaj cezar salatu
+                  - dodaj pastu bolognese
+                  - dodaj sladoled
+
+                  Tako ću ga odmah dodati u narudžbu. `,
+                      [],
+                      [],
+                      {
+                          lastSuggestedItems: [],
+                      },
+                  );
+              }
+
+                const items = getOrderItems(selectedOrder);
+                const menu = [].concat(foods, drinks);
+
+                let filteredItems = [];
+
+                console.log("MESSAGE:", normalizedMessage);
+
+                items.forEach((item) => {
+                    console.log(
+                        "ITEM:",
+                        extractBaseItemName(item),
+                        normalizeText(extractBaseItemName(item)),
+                    );
+                });
+
+                console.log("MESSAGE:", normalizedMessage);
+
+                items.forEach((item) => {
+                    console.log(
+                        "ORDER ITEM:",
+                        extractBaseItemName(item),
+                        normalizeText(extractBaseItemName(item)),
+                    );
+                });
+
+                const exactRequestedItems = items.filter((rawItem) => {
+                    const baseName = normalizeText(
+                        extractBaseItemName(rawItem),
+                    );
+
+                    const words = baseName
+                        .split(" ")
+                        .filter((w) => w.length > 2);
+
+                    const matches = words.filter((word) =>
+                        normalizedMessage.includes(word),
+                    );
+
+                    return matches.length >= Math.max(1, words.length - 1);
+                });
+
+                if (exactRequestedItems.length > 0) {
+                    filteredItems = exactRequestedItems;
+                } else {
+                    filteredItems = items.filter((rawItem) => {
+                        const baseName = extractBaseItemName(rawItem);
+
+                        const menuItem = menu.find((item) =>
+                            normalizeText(item.name || "") === normalizeText(baseName),
+                        );
+
+                        if (!menuItem) return false;
+
+                        const itemCategory = normalizeText(menuItem.category || "");
+                        const wantedCategory = normalizeText(category);
+
+                        return (
+                            itemCategory.includes(wantedCategory) ||
+                            normalizeText(baseName).includes(wantedCategory)
+                        );
+                    });
+                }
+
+                if (!filteredItems.length) {
+                    return buildResponse(
+                        "reply",
+                        `${nickname}, u toj narudžbi nisam pronašao artikle za: ${category}.`,
+                        [],
+                        [],
+                    );
+                }
+
+                if (exactRequestedItems.length === 1) {
+                    filteredItems = exactRequestedItems;
+                }
+
+                if (
+                    filteredItems.length > 1 &&
+                    exactRequestedItems.length === 0
+                ) {
+                    return buildResponse(
+                        "clarify_order",
+                        `${nickname}, u toj narudžbi ima više takvih artikala:\n\n${filteredItems
+                            .map((item) => `- ${extractBaseItemName(item)}`)
+                            .join("\n")}\n\nKoji želiš uzeti?`,
+                        filteredItems,
+                        [],
+                    );
+                }
+
+                const itemsWithDetails = filteredItems.filter((item) =>
+                    item.includes("MODIFIKACIJE:") || item.includes("NAPOMENA:"),
+                );
+
+                if (itemsWithDetails.length > 0) {
+                    return buildResponse(
+                        "confirm_repeat_with_modifications",
+                        `${nickname}, ovaj artikl je prije imao dodatke ili napomenu:\n\n${itemsWithDetails
+                            .map((item) => `- ${item}`)
+                            .join("\n\n")}\n\nŽeliš li ga dodati s istim dodacima kao prije ili bez dodataka?`,
+                        filteredItems,
+                        [],
+                        {
+                            repeatItem: encodeRepeatItem(itemsWithDetails[0]),
+                        },
+                    );
+                }
+
+                const requestedQuantity = extractRequestedQuantity(message);
+
+                const finalItems = filteredItems.map((item) =>
+                    replaceItemQuantity(item, requestedQuantity),
+                );
+
+                return buildResponse(
+                    "chat_order_added",
+                    `${nickname}, dodao sam iz te narudžbe:\n\n${finalItems
+                        .map((item) => {
+                            const quantityMatch = item.match(/\(X(\d+)\)/i);
+                            const quantity = quantityMatch ? Number(quantityMatch[1]) : 1;
+
+                            return `- ${extractBaseItemName(item)}${quantity > 1 ? ` x${quantity}` : ""}`;
+                        })
+                        .join("\n")}`,
+                    finalItems,
+                    [],
+                    {
+                        selectedRepeatItem: finalItems[0],
+                    },
+                );
+            }
+
+            if (conversationPlan.intent === "item_question") {
+                const requestedName =
+                    conversationPlan.items &&
+                    conversationPlan.items[0] &&
+                    conversationPlan.items[0].name ?
+                        conversationPlan.items[0].name :
+                        message;
+
+                const item = findMenuItemFromMessage(
+                    requestedName,
+                    foods,
+                    drinks,
+                ) || findMenuItemFromMessage(
+                    message,
+                    foods,
+                    drinks,
+                );
+
+                if (!item) {
+                    return buildResponse(
+                        "item_info",
+                        `${nickname}, ne mogu pronaći taj artikl u meniju.`,
+                        [],
+                        [],
+                    );
+                }
+
+                const opis = item.opis || item.description || "";
+                const sastojci = Array.isArray(item.sastojci) ?
+                    item.sastojci :
+                    Array.isArray(item.ingredients) ?
+                        item.ingredients :
+                        [];
+
+                if (!opis && !sastojci.length) {
+                    return buildResponse(
+                        "item_info",
+                        `${nickname}, nemam podatke o sastavu niti opisu artikla ${item.name}.`,
+                        [],
+                        [],
+                    );
+                }
+
+                return buildResponse(
+                    "item_info",
+                    `${nickname}, ${item.name}\n\n${opis ? `Opis: ${opis}\n\n` : ""}${sastojci.length ? `Sastojci: ${sastojci.join(", ")}` : ""}`,
+                    [item.name],
+                    [],
+                );
+            }
+
+
+
+
+            if (conversationPlan.intent === "category_question") {
+                return buildCategoryItemsResponse(
+                    nickname,
+                    conversationPlan.category,
+                    foods,
+                    drinks,
+                );
+            }
+            if (conversationPlan.intent === "clarify_order") {
+                return buildCategoryItemsResponse(
+                    nickname,
+                    conversationPlan.category,
+                    foods,
+                    drinks,
+                );
+            }
+
+            if (conversationPlan.intent === "history_order_detail") {
+                const deliveredOrders = sortOrdersByCreatedAtDesc(
+                    userOrders.filter((order) =>
+                        normalizeText((order && order.status) || "") === normalizeText("Dostavljeno"),
+                    ),
+                );
+
+                const selectedOrder = deliveredOrders[conversationPlan.orderNumber - 1];
+
+                return buildHistoryOrderDetailResponse(
+                    nickname,
+                    selectedOrder,
+                );
+            }
+
+            if (conversationPlan.intent === "order_history") {
+                return buildOrderHistoryResponse(nickname, userOrders);
+            }
+
+            if (conversationPlan.intent === "last_order") {
+                return buildLastDeliveredOrderResponse(
+                    nickname,
+                    lastDeliveredOrderItems,
+                );
+            }
+            console.log(
+                "REPEAT FILTER PLAN:",
+                JSON.stringify(conversationPlan, null, 2),
+            );
+
+            if (
+                conversationPlan.intent ===
+                "repeat_order_filtered_with_modifications"
+            ) {
+                const assistantMessages = history
+                    .filter((item) =>
+                        item.role === "assistant" || item.sender === "assistant",
+                    )
+                    .reverse();
+
+                let encodedItem = "";
+
+                for (const msg of assistantMessages) {
+                    if (msg.metadata && msg.metadata.repeatItem) {
+                        encodedItem = msg.metadata.repeatItem;
+                        break;
+                    }
+                }
+
+                if (!encodedItem) {
+                    return buildResponse(
+                        "reply",
+                        `${nickname}, ne znam koji artikl želiš dodati. Napiši ponovno naziv artikla.`,
+                        [],
+                        [],
+                    );
+                }
+
+                const fullItem = decodeRepeatItem(encodedItem);
+                const baseName = extractBaseItemName(fullItem);
+                const requestedQuantity = extractRequestedQuantity(message);
+                const finalItem = replaceItemQuantity(fullItem, requestedQuantity);
+
+                return buildResponse(
+                    "chat_order_added",
+                    `${nickname}, dodao sam ${baseName} s istim dodacima kao prije.`,
+                    [finalItem],
+                    [],
+                );
+            }
+
+            if (
+                conversationPlan.intent ===
+                "repeat_order_filtered_without_modifications"
+            ) {
+                const assistantMessages = history
+                    .filter((item) =>
+                        item.role === "assistant" || item.sender === "assistant",
+                    )
+                    .reverse();
+
+                let encodedItem = "";
+
+                for (const msg of assistantMessages) {
+                    if (msg.metadata && msg.metadata.repeatItem) {
+                        encodedItem = msg.metadata.repeatItem;
+                        break;
+                    }
+                }
+
+                if (!encodedItem) {
+                    return buildResponse(
+                        "reply",
+                        `${nickname}, ne znam koji artikl želiš dodati. Napiši ponovno naziv artikla.`,
+                        [],
+                        [],
+                    );
+                }
+
+                const fullItem = decodeRepeatItem(encodedItem);
+                const baseName = extractBaseItemName(fullItem);
+                const requestedQuantity = extractRequestedQuantity(message) || 1;
+
+                return buildResponse(
+                    "chat_order_added",
+                    `${nickname}, dodao sam ${baseName} bez dodataka.`,
+                    [`${baseName}(X${requestedQuantity})`],
+                    [],
+                );
+            }
+
+            if (conversationPlan.intent === "show_cart") {
+                return buildCartResponse(nickname, cartItems);
+            }
+            if (conversationPlan.intent === "popular_items") {
+                const popularCategory =
+                    getPopularCategoryFromMessage(message) ||
+                    getRecommendationCategoryFromMessage(message, conversationPlan.category);
+
+                if (popularCategory) {
+                    const items = buildPopularItemsByCategory(
+                        allOrders,
+                        foods,
+                        drinks,
+                        popularCategory,
+                        3,
+                    );
+
+                    return buildResponse(
+                        "popular_items",
+                        items.length > 0 ?
+                            `${nickname}, najpopularnije iz kategorije ${popularCategory} su:\n\n${items.map((item) => `- ${item}`).join("\n")}` :
+                            `${nickname}, trenutno nemam dovoljno podataka za popularne artikle iz kategorije ${popularCategory}.`,
+                        items,
+                        items.map((item) =>
+                            buildAction(`pick_menu_item|${item}|open_menu_browser`, `Dodaj ${item}`),
+                        ),
+                    );
+                }
+
+                const items = buildPopularItems(allOrders, foods, drinks, 3);
+                const popularItemNames = extractPopularItemNames(items);
+
+                return buildResponse(
+                    "popular_items",
+                    items.length > 0 ?
+                        `${nickname}, trenutno su najpopularniji artikli:\n\n${items.map((item) => `- ${item}`).join("\n\n")}` :
+                        `${nickname}, trenutno nemam dovoljno podataka o popularnim artiklima.`,
+                    popularItemNames,
+                    [],
+                );
+            }
+
+            if (conversationPlan.intent === "recommendation") {
+                const text = normalizeText(message);
+
+                const recommendationCategory = getRecommendationCategoryFromMessage(
+                    message,
+                    conversationPlan.category,
+                );
+
+             if (recommendationCategory) {
+                 const items = getSmartRecommendationsByCategory(
+                     recommendationCategory,
+                     userOrders,
+                     allOrders,
+                     foods,
+                     drinks,
+                     3,
+                 );
+
+                 const label = getRecommendationCategoryLabel(recommendationCategory);
+
+                 return buildResponse(
+                     "recommendation",
+                     items.length > 0 ?
+                         `${nickname}, od ${label} preporučujem:\n\n${items.map((item) => `- ${item}`).join("\n")}` :
+                         `${nickname}, trenutno nemam preporuku za ${label}.`,
+                     items,
+                     [],
+                     {
+                         lastSuggestedItems: items, shouldAskQuantityAfterSuggestion: true,
+                     },
+                 );
+             }
+
+                const items = buildPopularItems(allOrders, foods, drinks, 3);
+                const itemNames = extractPopularItemNames(items);
+
+                return buildResponse(
+                    "recommendation",
+                    items.length > 0 ?
+                        `${nickname}, predlažem ti:\n\n${items.map((item) => `- ${item}`).join("\n")}\n\nAko želiš, mogu ti preporučiti i nešto po tvojim prošlim narudžbama ili iz neke kategorije.` :
+                        `${nickname}, mogu ti preporučiti pizzu, sendvič, desert, predjelo ili glavno jelo. Što ti zvuči najbolje?`,
+                    itemNames,
+                    [],
+                    {
+                        lastSuggestedItems: itemNames,
+                        shouldAskQuantityAfterSuggestion: true,
+                    },
+                );
+            }
+
+
+            if (conversationPlan.intent === "order_status") {
+                return buildOrderSelectionResponse(nickname, activeOrders);
+            }
+
+            if (conversationPlan.intent === "finish_order") {
+                return buildResponse(
+                    "reply",
+                    `${nickname}, za završetak narudžbe otvori pregled košarice i tamo potvrdi slanje narudžbe.`,
+                    [],
+                    [
+                        buildAction("go_to_cart", "Završi narudžbu"),
+                    ],
+                );
+            }
+
+            if (conversationPlan.intent === "small_talk") {
+                return buildResponse(
+                    "reply",
+                    `${nickname}, bok. Mogu ti pomoći složiti narudžbu, preporučiti jelo, provjeriti košaricu ili pokazati meni.`,
+                    [],
+                    [],
+                );
+            }
+
+
+            if (isAskingAboutLastOrder(message)) {
+                return buildLastDeliveredOrderResponse(nickname, lastDeliveredOrderItems);
+            }
+            if (isRepeatLastOrderCommand(message)) {
+                return buildResponse(
+                    "repeat_last_order",
+                    lastDeliveredOrderItems.length > 0 ?
+                        `${nickname}, mogu ponovno dodati tvoju zadnju dostavljenu narudžbu: ${lastDeliveredOrderItems.join(", ")}. Potvrdi s 'da'.` :
+                        `${nickname}, ne mogu pronaći tvoju zadnju dostavljenu narudžbu.`,
+                    lastDeliveredOrderItems,
+                    [],
+                );
+            }
+
+            if (isAskingOrderStatus(message)) {
+                if (activeOrders.length > 0) {
+                    return buildOrderSelectionResponse(nickname, activeOrders);
+                }
+
+                if (lastAnyOrder) {
+                    return buildResponse(
+                        "last_any_order_actions",
+                        `${nickname}, trenutno nemaš aktivnu narudžbu. Tvoja zadnja narudžba je: ${getOrderItems(lastAnyOrder).join(", ")}. Status: ${lastAnyOrder.status || "Nepoznat status"}.`,
+                        getOrderItems(lastAnyOrder),
+                        [
+                            buildAction("open_order_status", "Provjeri aktivne narudžbe"),
+                            buildAction("open_last_any_order", "Prikaži zadnju narudžbu"),
+                            buildAction("open_home", "Početak"),
+                        ],
+                    );
+                }
+
+                return buildResponse(
+                    "reply",
+                    `${nickname}, trenutno nemaš aktivnu narudžbu i ne mogu pronaći prethodne narudžbe.`,
+                    [],
+                    [buildAction("open_home", "Početak")],
+                );
+            }
+
+if (isAskingRecommendations(message)) {
+    const recommendationCategory = getRecommendationCategoryFromMessage(
+        message,
+        conversationPlan.category,
     );
-  }
 
-  return buildResponse(
-    "recommendation_pick_confirm",
-    `${nickname}, želiš li da dodam ${selectedItem} u tvoju narudžbu?`,
-    [`${selectedItem}(X1)`],
-    [
-      buildAction(`confirm_recommendation_add|${selectedItem}|${sourceAction}`, "Da"),
-      buildAction(sourceAction, "Odaberi nešto drugo"),
-    ]
-  );
-}
-
-if (action.startsWith("confirm_recommendation_add|")) {
-  const parts = action.split("|");
-  const selectedItem = parts[1];
-  const sourceAction = parts[2] || "open_personal_recommendations";
-
-  const availableNames = buildMenuNameSet(foods, drinks);
-
-  if (!selectedItem || !availableNames.has(selectedItem)) {
-    return buildResponse(
-      "reply",
-      `${nickname}, ne mogu pronaći odabrani artikl.`,
-      [],
-      [buildAction("open_home", "Početak")]
-    );
-  }
-
-  return buildResponse(
-    "recommendation_added",
-`${nickname}, dodali ste ${selectedItem} u svoju narudžbu. U pregledu narudžbe možete pritisnuti artikl za napomene i modifikacije.`,    [`${selectedItem}(X1)`],
-    [
-      buildAction(sourceAction, "Još ovakvih preporuka"),
-      buildAction("go_to_cart", "Završi narudžbu"),
-      buildAction("open_home", "Početak"),
-    ]
-  );
-}
-
-
-
-   if (action === "open_order_status") {
-     return buildOrderSelectionResponse(nickname, activeOrders);
-   }
-
-    if (action.startsWith("refresh_order_status")) {
-      const selectedKey = action.includes("|") ? action.split("|")[1] : null;
-
-      if (selectedKey) {
-        const selectedOrder = userOrders.find((order) => order.key === selectedKey);
-        return buildSingleOrderStatusResponse(nickname, selectedOrder);
-      }
-
-      if (activeOrder) {
-        return buildSingleOrderStatusResponse(nickname, activeOrder);
-      }
-
-      const userOrdersSorted = sortOrdersByCreatedAtDesc(userOrders);
-      return buildOrderSelectionResponse(nickname, userOrdersSorted);
-    }
-
-if (action.startsWith("select_order_status|")) {
-  const selectedKey = action.split("|")[1];
-
-  const selectedOrder = userOrders.find((order) => order.key === selectedKey);
-
-  return buildSingleOrderStatusResponse(nickname, selectedOrder);
-}
-
-  if (action === "open_popular_items") {
-    const items = buildPopularItems(allOrders, foods, drinks, 3);
-    const popularItemNames = extractPopularItemNames(items);
-
-    return buildResponse(
-      "popular_items",
-      items.length > 0 ?
-        `${nickname}, trenutno su najpopularniji artikli:\n\n${items.map((item) => `- ${item}`).join("\n")}` :
-        `${nickname}, trenutno nemam dovoljno podataka o popularnim artiklima.`,
-      popularItemNames,
-      popularItemNames.length > 0
-        ? buildRecommendationItemActionsWhenChoosingWhatIsPopular(popularItemNames, "recommend_popular")
-        : [buildAction("open_home", "Početak")]
-    );
-  }
-if (action === "open_new_order") {
-  return buildResponse(
-    "new_order",
-    `${nickname}, kako želiš započeti novu narudžbu?`,
-    [],
-    [
-      buildAction("open_menu_browser", "Pregled jelovnika"),
-      buildAction("open_popular_items", "Što je popularno?"),
-      buildAction("open_home", "Početak"),
-    ]
-  );
-}
-
-   if (action === "open_menu_browser") {
-     return buildResponse(
-       "menu_browser_root",
-       `${nickname}, odaberi što želiš pregledati.`,
-       [],
-       [
-         buildAction("menu_food_root", "Hrana"),
-         buildAction("menu_drink_root", "Piće"),
-         buildAction("open_new_order", "Natrag"),
-         buildAction("open_home", "Početak"),
-       ]
-     );
-   }
-
-   if (action === "menu_food_root") {
-     return buildResponse(
-       "menu_categories",
-       `${nickname}, odaberi kategoriju hrane.`,
-       [],
-       buildMenuCategoryActions(foods, "food")
-     );
-   }
-
-   if (action === "menu_drink_root") {
-     return buildResponse(
-       "menu_categories",
-       `${nickname}, odaberi kategoriju pića.`,
-       [],
-       buildMenuCategoryActions(drinks, "drink")
-     );
-   }
-
-   if (action.startsWith("menu_food_category|")) {
-     const category = action.split("|")[1];
-
-     const items = foods.filter((item) => item?.category === category);
-     const backAction = "menu_food_root";
-
-     return buildResponse(
-       "menu_items",
-       `${nickname}, odaberi artikl iz kategorije ${category}.`,
-       [],
-       buildMenuItemActions(items, backAction)
-     );
-   }
-
-   if (action.startsWith("menu_drink_category|")) {
-     const category = action.split("|")[1];
-
-     const items = drinks.filter((item) => item?.category === category);
-     const backAction = "menu_drink_root";
-
-     return buildResponse(
-       "menu_items",
-       `${nickname}, odaberi artikl iz kategorije ${category}.`,
-       [],
-       buildMenuItemActions(items, backAction)
-     );
-   }
-
-   if (action.startsWith("pick_menu_item|")) {
-     const parts = action.split("|");
-     const itemName = parts[1];
-     const backAction = parts[2] || "open_menu_browser";
-
-     const availableNames = buildMenuNameSet(foods, drinks);
-
-     if (!itemName || !availableNames.has(itemName)) {
-       return buildResponse(
-         "reply",
-         `${nickname}, ne mogu pronaći odabrani artikl.`,
-         [],
-         [
-           buildAction("open_menu_browser", "Pregled jelovnika"),
-           buildAction("open_home", "Početak"),
-         ]
-       );
-     }
-
-     return buildMenuItemConfirmResponse(nickname, itemName, backAction);
-   }
-
-   if (action.startsWith("confirm_menu_item_add|")) {
-     const parts = action.split("|");
-     const itemName = parts[1];
-     const backAction = parts[2] || "open_menu_browser";
-
-     const availableNames = buildMenuNameSet(foods, drinks);
-
-     if (!itemName || !availableNames.has(itemName)) {
-       return buildResponse(
-         "reply",
-         `${nickname}, ne mogu pronaći odabrani artikl.`,
-         [],
-         [
-           buildAction("open_menu_browser", "Pregled jelovnika"),
-           buildAction("open_home", "Početak"),
-         ]
-       );
-     }
-
-     return buildResponse(
-       "menu_item_added",
-       `${nickname}, dodao sam ${itemName} u tvoju narudžbu. U pregledu narudžbe možeš pritisnuti artikl za napomene i modifikacije. Želiš li još nešto?`,
-       [`${itemName}(X1)`],
-       [
-         buildAction(backAction, "Dodaj još iz ove kategorije"),
-         buildAction("open_menu_browser", "Pregled jelovnika"),
-         buildAction("go_to_cart", "Završi narudžbu"),
-         buildAction("open_home", "Početak"),
-       ]
-     );
-   }
-
-
-   if (isAskingAboutLastOrder(message)) {
-     return buildLastDeliveredOrderResponse(nickname, lastDeliveredOrderItems);
-   }
-if (isRepeatLastOrderCommand(message)) {
-  return buildResponse(
-    "repeat_last_order",
-    lastDeliveredOrderItems.length > 0 ?
-      `${nickname}, mogu ponovno dodati tvoju zadnju dostavljenu narudžbu: ${lastDeliveredOrderItems.join(", ")}. Potvrdi s 'da'.` :
-      `${nickname}, ne mogu pronaći tvoju zadnju dostavljenu narudžbu.`,
-    lastDeliveredOrderItems,
-    []
-  );
-}
-
-if (isAskingOrderStatus(message)) {
-  if (activeOrders.length > 0) {
-    return buildOrderSelectionResponse(nickname, activeOrders);
-  }
-
-  if (lastAnyOrder) {
-    return buildResponse(
-      "last_any_order_actions",
-      `${nickname}, trenutno nemaš aktivnu narudžbu. Tvoja zadnja narudžba je: ${getOrderItems(lastAnyOrder).join(", ")}. Status: ${lastAnyOrder.status || "Nepoznat status"}.`,
-      getOrderItems(lastAnyOrder),
-      [
-        buildAction("open_order_status", "Provjeri aktivne narudžbe"),
-        buildAction("open_last_any_order", "Prikaži zadnju narudžbu"),
-        buildAction("open_home", "Početak"),
-      ]
-    );
-  }
-
-  return buildResponse(
-    "reply",
-    `${nickname}, trenutno nemaš aktivnu narudžbu i ne mogu pronaći prethodne narudžbe.`,
-    [],
-    [buildAction("open_home", "Početak")]
-  );
-}
-
-if (isAskingRecommendedDrinksForFood(message)) {
-  return buildRecommendedDrinksForFoodResponse(nickname, message, foods, drinks);
-}
-
-    if (isAskingRecommendations(message)) {
-      return buildRecommendationTypeMenuResponse(nickname);
-    }
-
-  if (isAskingPopularItems(message)) {
-    const items = buildPopularItems(allOrders, foods, drinks, 3);
-    const popularItemNames = extractPopularItemNames(items);
-
-    return buildResponse(
-      "popular_items",
-      items.length > 0 ?
-        `${nickname}, trenutno su najpopularniji artikli:\n\n${items.map((item) => `- ${item}`).join("\n")}` :
-        `${nickname}, trenutno nemam dovoljno podataka o popularnim artiklima.`,
-      popularItemNames,
-      popularItemNames.length > 0
-        ? buildRecommendationItemActionsWhenChoosingWhatIsPopular(popularItemNames, "recommend_popular")
-        : [buildAction("open_home", "Početak")]
-    );
-  }
-
-      const contextJson = formatContextJson(foods, drinks);
-const ordersContextJson = buildOrdersContext(activeOrder, null);
-if (isAskingCart(message)) {
-  return buildCartResponse(nickname, cartItems);
-}
-
-if (isSmallTalk(message)) {
-  return buildResponse(
-    "reply",
-    `${nickname}, bok. Mogu ti pomoći s jelovnikom, cijenama, alergenima, preporukama i statusom narudžbe. Za dodavanje artikala koristi ponuđene gumbe.`,
-    [],
-    buildDefaultInfoActions()
-  );
-}
-
-
-if (isOrderingIntent(message)) {
-  const parsed = await parseOrderFromMessage({
-    apiKey: openAiKey,
-    message,
-    foods,
-    drinks,
-    modifications,
-  });
-
-if (parsed.items.length > 0) {
-const recommendedDrinksByFood = getRecommendedDrinksForItems(parsed.items, foods, drinks);
-
-const recommendationText = recommendedDrinksByFood.length > 0
-  ? `\n\nPreporučena pića:\n${recommendedDrinksByFood
-      .map((item) => `- uz ${item.food}: ${item.drinks.join(" ili ")}`)
-      .join("\n")}`
-  : "";
-const noteText = parsed.items.some((item) => extractNote(item))
-  ? "\n\nNeslužbene dodatke zapisao sam kao napomenu konobaru."
-  : "";
-  const formattedAddedItems = parsed.items.map((item) => {
-    const base = item
-      .split("\n")[0]
-      .replace(/\(X\d+\)/i, "")
-      .trim();
-
-    const quantityMatch = item.match(/\(X(\d+)\)/i);
-    const quantity = quantityMatch ? Number(quantityMatch[1]) : 1;
-
-    const modsMatch = item.match(/MODIFIKACIJE:\s*([\s\S]*?)(?:\n\nNAPOMENA:|\s*\(X\d+\)|$)/i);
-    const mods = modsMatch ? modsMatch[1].trim() : "";
-
-    const noteMatch = item.match(/NAPOMENA:\s*([\s\S]*?)(?:\s*\(X\d+\)|$)/i);
-    const note = noteMatch ? noteMatch[1].trim() : "";
-
-    let text = `- ${base}`;
-
-    const details = [];
-
-    if (mods) {
-      details.push(`modifikacije: ${mods}`);
-    }
-
-    if (note) {
-      details.push(`napomena: ${note}`);
-    }
-
-    if (details.length > 0) {
-      text += ` -> ${details.join(", ")}`;
-    }
-
-    if (quantity > 1) {
-      text += ` x${quantity}`;
-    }
-
-    return text;
-  });
-
-const unrecognizedText = parsed.unrecognized?.length > 0
-  ? `\n\nNisam prepoznao: ${parsed.unrecognized.join(", ")}. Provjeri naziv artikla ili ga odaberi iz pregleda jelovnika.`
-  : "";
-
-return buildResponse(
-  "chat_order_added",
-  `${nickname}, dodao sam:\n\n${formattedAddedItems.join("\n\n")}\n\nU pregledu narudžbe uvijek možeš promijeniti količinu ili dodati dodatke/napomenu.${recommendationText}${noteText ? `\n${noteText}` : ""}${unrecognizedText}\n\nŽeliš li još nešto?`,
-  parsed.items,
-  [
-    ...[...new Set(recommendedDrinksByFood.flatMap((item) => item.drinks))].map((drink) =>
-      buildAction(`pick_menu_item|${drink}|open_menu_browser`, `Dodaj ${drink}`)
-    ),
-    buildAction("go_to_cart", "Završi narudžbu"),
-    buildAction("open_menu_browser", "Dodaj još"),
-    buildAction("open_home", "Početak"),
-  ]
-);
-}
-
-  return buildResponse(
-    "reply",
-    `${nickname}, nisam razumio koje artikle želiš.`,
-    [],
-    buildMainActions()
-  );
-}
-
-
-
-if (isAskingDrinksWithAllergens(message)) {
-  return buildDrinksWithAllergensResponse(nickname, drinks);
-}
-
-if (isFinishOrderIntent(message)) {
-  return buildResponse(
-    "reply",
-    `${nickname}, za završetak narudžbe otvori pregled košarice i tamo potvrdi slanje narudžbe.`,
-    [],
-    [
-      buildAction("go_to_cart", "Završi narudžbu"),
-      buildAction("open_home", "Početak"),
-    ]
-  );
-}
-
-
-if (isConfirmYes(message)) {
-  return buildResponse(
-    "reply",
-    `${nickname}, za potvrdu dodavanja koristi ponuđene gumbe ili napiši što želiš dodati.`,
-    [],
-    buildMainActions()
-  );
-}
-
-    if (isFollowUpWhichOrder(message) && wasLastAssistantAboutOrderStatus(history)) {
-      if (activeOrders.length > 0) {
-        return buildOrderSelectionResponse(nickname, activeOrders);
-      }
-
-      if (lastAnyOrder) {
-        const items = getOrderItems(lastAnyOrder);
-        const status = lastAnyOrder.status || "Nepoznat status";
+    if (recommendationCategory) {
+        const items = getSmartRecommendationsByCategory(
+            recommendationCategory,
+            userOrders,
+            allOrders,
+            foods,
+            drinks,
+            3,
+        );
+
+        const label = getRecommendationCategoryLabel(recommendationCategory);
 
         return buildResponse(
-          "last_any_order_actions",
-          items.length > 0 ?
-            `${nickname}, mislim na tvoju zadnju narudžbu: ${items.join(", ")}. Status: ${status}.` :
-            `${nickname}, mislim na tvoju zadnju narudžbu, ali nema stavki za prikaz. Status: ${status}.`,
-          items,
-          [
-            buildAction("open_last_any_order", "Prikaži zadnju narudžbu"),
-            buildAction("open_order_status", "Status aktivnih narudžbi"),
-            buildAction("open_home", "Početak"),
-          ]
+            "recommendation",
+            items.length > 0 ?
+                `${nickname}, od ${label} preporučujem:\n\n${items.map((item) => `- ${item}`).join("\n")}` :
+                `${nickname}, trenutno nemam preporuku za ${label}.`,
+            items,
+            [],
+            {
+                lastSuggestedItems: items,
+                shouldAskQuantityAfterSuggestion: true,
+            },
         );
-      }
-
-      return buildResponse(
-        "reply",
-        `${nickname}, trenutno ne mogu pronaći narudžbu na koju se pitanje odnosi.`,
-        [],
-        [buildAction("open_home", "Početak")]
-      );
     }
 
- const answer = await callOpenAI({
-   apiKey: openAiKey,
-   prompt: `
+    const items = buildPopularItems(allOrders, foods, drinks, 3);
+    const itemNames = extractPopularItemNames(items);
+
+    return buildResponse(
+        "recommendation",
+        items.length > 0 ?
+            `${nickname}, predlažem ti:\n\n${items.map((item) => `- ${item}`).join("\n")}\n\nMogu ti preporučiti i nešto po tvojim prošlim narudžbama ili iz neke kategorije.` :
+            `${nickname}, mogu ti preporučiti pizzu, sendvič, desert, predjelo ili glavno jelo. Što ti zvuči najbolje?`,
+        itemNames,
+        [],
+        {
+            lastSuggestedItems: itemNames,
+            shouldAskQuantityAfterSuggestion: true,
+        },
+    );
+}
+
+            const popularCategory = getRecommendationCategoryFromMessage(
+                message,
+                conversationPlan.category,
+            );
+
+            if (isAskingPopularItems(message) && popularCategory) {
+                const items = buildPopularItemsByCategory(
+                    allOrders,
+                    foods,
+                    drinks,
+                    popularCategory,
+                    3,
+                );
+
+                return buildResponse(
+                    "popular_items",
+                    items.length > 0 ?
+                        `${nickname}, najpopularnije iz kategorije ${popularCategory} su:\n\n${items.map((item) => `- ${item}`).join("\n")}` :
+                        `${nickname}, trenutno nemam dovoljno podataka za popularne artikle iz kategorije ${popularCategory}.`,
+                    items,
+                    items.map((item) =>
+                        buildAction(`pick_menu_item|${item}|open_menu_browser`, `Dodaj ${item}`),
+                    ),
+                );
+            }
+
+            if (isAskingPopularItems(message)) {
+                const popularCategory = getPopularCategoryFromMessage(message);
+
+                if (popularCategory) {
+                    const items = buildPopularItemsByCategory(
+                        allOrders,
+                        foods,
+                        drinks,
+                        popularCategory,
+                        3,
+                    );
+
+                    return buildResponse(
+                        "popular_items",
+                        items.length > 0 ?
+                            `${nickname}, najpopularnije iz kategorije ${popularCategory} su:\n\n${items.map((item) => `- ${item}`).join("\n")}` :
+                            `${nickname}, trenutno nemam dovoljno podataka za popularne artikle iz kategorije ${popularCategory}.`,
+                        items,
+                        items.map((item) =>
+                            buildAction(`pick_menu_item|${item}|open_menu_browser`, `Dodaj ${item}`),
+                        ),
+                    );
+                }
+
+                const items = buildPopularItems(allOrders, foods, drinks, 3);
+                const popularItemNames = extractPopularItemNames(items);
+
+                return buildResponse(
+                    "popular_items",
+                    items.length > 0 ?
+                        `${nickname}, trenutno su najpopularniji artikli:\n\n${items.map((item) => `- ${item}`).join("\n\n")}` :
+                        `${nickname}, trenutno nemam dovoljno podataka o popularnim artiklima.`,
+                    popularItemNames,
+                    popularItemNames.length > 0 ?
+                        buildRecommendationItemActionsWhenChoosingWhatIsPopular(popularItemNames, "recommend_popular") :
+                        [buildAction("open_home", "Početak")],
+                );
+            }
+
+            const ordersContextJson = buildOrdersContext(activeOrder, null);
+            if (isAskingCart(message)) {
+                return buildCartResponse(nickname, cartItems);
+            }
+
+            if (isSmallTalk(message)) {
+                return buildResponse(
+                    "reply",
+                    `${nickname}, bok. Mogu ti pomoći s jelovnikom, cijenama, alergenima, preporukama i statusom narudžbe.`,
+                    [],
+                    buildDefaultInfoActions(),
+                );
+            }
+
+
+            if (isAskingRecommendedDrinksForFood(message)) {
+                return buildRecommendedDrinksForFoodResponse(nickname, message, foods, drinks);
+            }
+
+            const orderingResult = await handleOrderingIntent({
+                message,
+                nickname,
+                foods,
+                drinks,
+                modifications,
+                openAiKey,
+            });
+
+            if (orderingResult) return orderingResult;
+
+
+            if (isAskingDrinksWithAllergens(message)) {
+                return buildDrinksWithAllergensResponse(nickname, drinks);
+            }
+
+            if (isFinishOrderIntent(message)) {
+                return buildResponse(
+                    "reply",
+                    `${nickname}, za završetak narudžbe otvori pregled košarice i tamo potvrdi slanje narudžbe.`,
+                    [],
+                    [
+                        buildAction("go_to_cart", "Završi narudžbu"),
+                        buildAction("open_home", "Početak"),
+                    ],
+                );
+            }
+
+
+            if (isConfirmYes(message)) {
+                return buildResponse(
+                    "reply",
+                    `${nickname}, za potvrdu dodavanja napiši što želiš dodati.`,
+                    [],
+                    buildMainActions(),
+                );
+            }
+
+            if (isFollowUpWhichOrder(message) && wasLastAssistantAboutOrderStatus(history)) {
+                if (activeOrders.length > 0) {
+                    return buildOrderSelectionResponse(nickname, activeOrders);
+                }
+
+                if (lastAnyOrder) {
+                    const items = getOrderItems(lastAnyOrder);
+                    const status = lastAnyOrder.status || "Nepoznat status";
+
+                    return buildResponse(
+                        "last_any_order_actions",
+                        items.length > 0 ?
+                            `${nickname}, mislim na tvoju zadnju narudžbu: ${items.join(", ")}. Status: ${status}.` :
+                            `${nickname}, mislim na tvoju zadnju narudžbu, ali nema stavki za prikaz. Status: ${status}.`,
+                        items,
+                        [
+                            buildAction("open_last_any_order", "Prikaži zadnju narudžbu"),
+                            buildAction("open_order_status", "Status aktivnih narudžbi"),
+                            buildAction("open_home", "Početak"),
+                        ],
+                    );
+                }
+
+                return buildResponse(
+                    "reply",
+                    `${nickname}, trenutno ne mogu pronaći narudžbu na koju se pitanje odnosi.`,
+                    [],
+                    [buildAction("open_home", "Početak")],
+                );
+            }
+
+            const answer = await callOpenAI({
+                apiKey: openAiKey,
+                prompt: `
  Ti si pametni AI konobar za restoran.
 
  Odgovaraj na hrvatskom jeziku.
@@ -2103,10 +2486,10 @@ if (isConfirmYes(message)) {
  Ne izmišljaj artikle, cijene, alergene ni preporuke.
  Ako nešto ne znaš, reci da nemaš taj podatak.
  Odgovor neka bude kratak, najviše 3 rečenice.
- Za dodavanje artikala korisnik može pisati u chat ili koristiti gumbe.
+ Za dodavanje artikala korisnik može pisati u chat.
 - Nikad ne tvrdi da korisnik već ima artikl u košarici osim ako je to izričito navedeno u cartItems kontekstu.
 - Ne koristi prethodni razgovor kao dokaz sadržaja košarice.
-- Ako korisnik želi dodati artikl, a nisi u parseru, reci da napiše točan artikl ili koristi gumbe.
+- Ako korisnik želi dodati artikl, a nisi u parseru, reci da napiše točan artikl .
 
  PRETHODNI RAZGOVOR:
  ${historyText}
@@ -2120,30 +2503,31 @@ if (isConfirmYes(message)) {
  KORISNIK:
  ${message}
  `.trim(),
-   temperature: 0.2,
- });
+                temperature: 0.2,
+            });
 
-    return buildResponse(
-      "reply",
-      answer,
-      [],
-    buildMainActions()
-    );
-    } catch (err) {
-      console.error("chatWaiter error:", err);
+            return buildResponse(
+                "reply",
+                answer,
+                [],
+                buildMainActions(),
+            );
+        } catch (err) {
+            console.error("chatWaiter FULL ERROR:", err);
+            console.error("chatWaiter STACK:", err && err.stack);
 
-      if (err instanceof HttpsError) {
-        throw err;
-      }
+            if (err instanceof HttpsError) {
+                throw err;
+            }
 
-      throw new HttpsError(
-        "internal",
-        "Greška na serveru (chatWaiter).",
-        {
-          message: err?.message || "Unknown error",
+            throw new HttpsError(
+                "internal",
+                "Greška na serveru (chatWaiter).",
+                {
+                    message: (err && err.message) || "Unknown error",
+                    stack: (err && err.stack) || "",
+                },
+            );
         }
-      );
-    }
-  }
+    },
 );
-

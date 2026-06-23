@@ -1,9 +1,13 @@
 package com.example.lav_digitalizacija.model;
 
+import java.util.Map;
+
 public class ChatMessage {
     private String text;
     private boolean isUser;
     private long timestamp;
+
+    private Map<String, Object> metadata;
 
     public ChatMessage() {
         // obavezno za Firebase
@@ -23,6 +27,15 @@ public class ChatMessage {
 
     public String getText() {
         return text;
+    }
+
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
+
+
+    public void setMetadata(Map<String, Object> metadata) {
+        this.metadata = metadata;
     }
 
     public boolean isUser() {
