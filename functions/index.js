@@ -1373,25 +1373,24 @@ if (
 
        const normalizedForParser = normalizeText(message);
 
-       const shouldTryOrderParser =
-           message &&
-           !action &&
-           !mealContext.plan &&
-           !isGenericCategoryRequest &&
-           !shouldIgnoreOldSuggestions &&
-           !isAskingRecommendations(message) &&
-           !isAskingPopularItems(message) &&
-           !isAskingCart(message) &&
-           !isAskingOrderStatus(message) &&
-           !isFinishOrderIntent(message) &&
-           (
-               extractQuantity(message) ||
-               normalizedForParser.includes(" bez ") ||
-               normalizedForParser.includes(" sa ") ||
-               normalizedForParser.includes(" s ") ||
-               normalizedForParser.includes(" za van") ||
-               normalizedForParser.includes(" i ")
-           );
+      const shouldTryOrderParser =
+          message &&
+          !action &&
+          !mealContext.plan &&
+          !isGenericCategoryRequest &&
+          !isAskingRecommendations(message) &&
+          !isAskingPopularItems(message) &&
+          !isAskingCart(message) &&
+          !isAskingOrderStatus(message) &&
+          !isFinishOrderIntent(message) &&
+          (
+              extractQuantity(message) ||
+              normalizedForParser.includes(" bez ") ||
+              normalizedForParser.includes(" sa ") ||
+              normalizedForParser.includes(" s ") ||
+              normalizedForParser.includes(" za van") ||
+              normalizedForParser.includes(" i ")
+          );
 
        if (shouldTryOrderParser) {
            const parsedOrder = await parseOrderFromMessage({
