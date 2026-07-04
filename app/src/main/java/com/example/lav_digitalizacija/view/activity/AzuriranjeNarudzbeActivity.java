@@ -1,16 +1,21 @@
 package com.example.lav_digitalizacija.view.activity;
 
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.lav_digitalizacija.R;
+import com.google.android.material.button.MaterialButton;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,11 +23,12 @@ import java.util.Map;
 public class AzuriranjeNarudzbeActivity extends AppCompatActivity {
 
     private TextView txtNarudzbaId;
-    private Button btnZaprimljeno;
-    private Button btnIzrada;
-    private Button btnPriprema;
-    private Button btnStize;
-    private Button btnDostavljeno;
+
+    private MaterialButton btnZaprimljeno;
+    private MaterialButton btnIzrada;
+    private MaterialButton btnPriprema;
+    private MaterialButton btnStize;
+    private MaterialButton btnDostavljeno;
 
     private String narudzbaId;
 
@@ -54,28 +60,62 @@ public class AzuriranjeNarudzbeActivity extends AppCompatActivity {
 
         txtNarudzbaId.setText("Upravljanje: " + narudzbaId);
 
+        postaviKlikove();
+        ucitajTrenutniStatus();
+    }
+
+    private void ucitajTrenutniStatus() {
+        DatabaseReference ref = FirebaseDatabase.getInstance()
+                .getReference("narudzbe")
+                .child(narudzbaId);
+
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String status = snapshot.child("status").getValue(String.class);
+
+                if (status != null) {
+                    oznaciAktivniStatus(status);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(
+                        AzuriranjeNarudzbeActivity.this,
+                        "Greška pri učitavanju statusa",
+                        Toast.LENGTH_SHORT
+                ).show();
+            }
+        });
+    }
+
+    private void postaviKlikove() {
         btnZaprimljeno.setOnClickListener(v ->
-                updateStatusNarudzbe(narudzbaId, "Narudžba zaprimljena", 1)
+                updateStatusNarudzbe("Narudžba zaprimljena", 1)
         );
 
         btnIzrada.setOnClickListener(v ->
-                updateStatusNarudzbe(narudzbaId, "Krenulo u izradu", 2)
+                updateStatusNarudzbe("Krenulo u izradu", 2)
         );
 
         btnPriprema.setOnClickListener(v ->
-                updateStatusNarudzbe(narudzbaId, "Priprema se", 3)
+                updateStatusNarudzbe("Priprema se", 3)
         );
 
         btnStize.setOnClickListener(v ->
-                updateStatusNarudzbe(narudzbaId, "Uskoro stiže na vaš stol", 4)
+                updateStatusNarudzbe("Uskoro stiže na vaš stol", 4)
         );
 
         btnDostavljeno.setOnClickListener(v ->
-                updateStatusNarudzbe(narudzbaId, "Dostavljeno", 4)
+                updateStatusNarudzbe("Dostavljeno", 4)
         );
     }
 
-    private void updateStatusNarudzbe(String narudzbaId, String status, int korak) {
+    private void updateStatusNarudzbe(String status, int korak) {
+        oznaciAktivniStatus(status);
+        postaviGumbeEnabled(false);
+
         DatabaseReference ref = FirebaseDatabase.getInstance()
                 .getReference("narudzbe")
                 .child(narudzbaId);
@@ -86,8 +126,9 @@ public class AzuriranjeNarudzbeActivity extends AppCompatActivity {
         updateMap.put("ukupnoKoraka", 4);
 
         ref.updateChildren(updateMap).addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
+            postaviGumbeEnabled(true);
 
+            if (task.isSuccessful()) {
                 Toast.makeText(
                         AzuriranjeNarudzbeActivity.this,
                         "Status ažuriran: " + status,
@@ -96,7 +137,6 @@ public class AzuriranjeNarudzbeActivity extends AppCompatActivity {
 
                 finish();
                 overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
-
             } else {
                 Toast.makeText(
                         AzuriranjeNarudzbeActivity.this,
@@ -105,6 +145,61 @@ public class AzuriranjeNarudzbeActivity extends AppCompatActivity {
                 ).show();
             }
         });
+    }
 
+    private void oznaciAktivniStatus(String status) {
+        resetirajGumbeStatusa();
+
+        switch (status) {
+            case "Narudžba zaprimljena":
+                oznaciGumb(btnZaprimljeno);
+                break;
+
+            case "Krenulo u izradu":
+                oznaciGumb(btnIzrada);
+                break;
+
+            case "Priprema se":
+                oznaciGumb(btnPriprema);
+                break;
+
+            case "Uskoro stiže na vaš stol":
+                oznaciGumb(btnStize);
+                break;
+
+            case "Dostavljeno":
+                oznaciGumb(btnDostavljeno);
+                break;
+        }
+    }
+
+    private void resetirajGumbeStatusa() {
+        resetirajGumb(btnZaprimljeno);
+        resetirajGumb(btnIzrada);
+        resetirajGumb(btnPriprema);
+        resetirajGumb(btnStize);
+        resetirajGumb(btnDostavljeno);
+    }
+
+    private void resetirajGumb(MaterialButton button) {
+        button.setBackgroundTintList(ColorStateList.valueOf(getColor(android.R.color.white)));
+        button.setTextColor(getColor(R.color.primary));
+        button.setStrokeColor(ColorStateList.valueOf(getColor(R.color.primary)));
+        button.setStrokeWidth(3);
+    }
+
+    private void oznaciGumb(MaterialButton button) {
+        button.setBackgroundTintList(ColorStateList.valueOf(getColor(R.color.primary)));
+        button.setTextColor(getColor(android.R.color.white));
+        button.setStrokeColor(ColorStateList.valueOf(getColor(R.color.primary)));
+        button.setStrokeWidth(3);
+    }
+
+    private void postaviGumbeEnabled(boolean enabled) {
+        btnZaprimljeno.setEnabled(enabled);
+        btnIzrada.setEnabled(enabled);
+        btnPriprema.setEnabled(enabled);
+        btnStize.setEnabled(enabled);
+        btnDostavljeno.setEnabled(enabled);
     }
 }

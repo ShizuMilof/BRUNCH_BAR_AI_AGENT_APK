@@ -1,68 +1,113 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black">
+    android:background="#F5F7FA">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="16dp"
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/txtNarudzbaId"
-            android:layout_width="wrap_content"
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Upravljanje narudžbom"
-            android:textColor="@android:color/white"
-            android:textSize="22sp"
-            android:textStyle="bold" />
+            app:cardCornerRadius="20dp"
+            app:cardElevation="3dp"
+            app:cardBackgroundColor="@android:color/white"
+            app:strokeColor="@color/primary"
+            app:strokeWidth="3dp">
 
-        <Button
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:id="@+id/txtNarudzbaId"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Upravljanje narudžbom"
+                    android:textColor="#212121"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Simulacija rada kuhinje"
+                    android:textColor="#757575"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnZaprimljeno"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_height="52dp"
+            android:layout_marginTop="20dp"
             android:text="Narudžba zaprimljena"
-            android:textColor="@color/black"
-            android:backgroundTint="@color/white" />
+            android:textColor="@color/primary"
+            app:backgroundTint="@android:color/white"
+            app:cornerRadius="16dp"
+            app:strokeColor="@color/primary"
+            app:strokeWidth="3dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnIzrada"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_height="52dp"
+            android:layout_marginTop="10dp"
             android:text="Krenulo u izradu"
-            android:textColor="@color/black"
-            android:backgroundTint="@color/white" />
+            android:textColor="@color/primary"
+            app:backgroundTint="@android:color/white"
+            app:cornerRadius="16dp"
+            app:strokeColor="@color/primary"
+            app:strokeWidth="3dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPriprema"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_height="52dp"
+            android:layout_marginTop="10dp"
             android:text="Priprema se"
-            android:textColor="@color/black"
-            android:backgroundTint="@color/white" />
+            android:textColor="@color/primary"
+            app:backgroundTint="@android:color/white"
+            app:cornerRadius="16dp"
+            app:strokeColor="@color/primary"
+            app:strokeWidth="3dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnStize"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_height="52dp"
+            android:layout_marginTop="10dp"
             android:text="Uskoro stiže na vaš stol"
-            android:textColor="@color/black"
-            android:backgroundTint="@color/white" />
+            android:textColor="@color/primary"
+            app:backgroundTint="@android:color/white"
+            app:cornerRadius="16dp"
+            app:strokeColor="@color/primary"
+            app:strokeWidth="3dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDostavljeno"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_height="52dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="16dp"
             android:text="Dostavljeno"
-            android:textColor="@color/black"
-            android:backgroundTint="@color/white" />
+            android:textColor="@color/primary"
+            app:backgroundTint="@android:color/white"
+            app:cornerRadius="16dp"
+            app:strokeColor="@color/primary"
+            app:strokeWidth="3dp" />
 
     </LinearLayout>
+
 </ScrollView>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -10,44 +11,55 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Admin pristup"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:textColor="@color/black" />
+        android:textColor="#212121"
+        android:textSize="24sp"
+        android:textStyle="bold" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Unesi kod za ulazak u kuhinju"
-        android:textSize="16sp"
-        android:textColor="@color/black"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="6dp"
+        android:text="Unesite administratorski kod za pristup kuhinji."
+        android:textColor="#757575"
+        android:textSize="15sp" />
 
     <EditText
         android:id="@+id/etAdminCode"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="52dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/bg_chat_input_container"
         android:hint="Admin kod"
         android:inputType="textPassword"
-        android:layout_marginTop="16dp"
-        android:padding="12dp"
-        android:background="@drawable/bg_input_rounded" />
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:textColor="#212121"
+        android:textColorHint="#9E9E9E" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnAdminLogin"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="52dp"
+        android:layout_marginTop="22dp"
         android:text="Ulaz"
-        android:layout_marginTop="20dp"
-        android:backgroundTint="@color/black"
-        android:textColor="@color/white" />
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        app:backgroundTint="@color/primary"
+        app:cornerRadius="16dp" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnCancel"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="52dp"
+        android:layout_marginTop="10dp"
         android:text="Odustani"
-        android:layout_marginTop="8dp"
-        android:backgroundTint="#DDDDDD"
-        android:textColor="@color/black" />
+        android:textAllCaps="false"
+        android:textColor="@color/primary"
+        android:textStyle="bold"
+        app:backgroundTint="@android:color/white"
+        app:cornerRadius="16dp"
+        app:strokeColor="@color/primary"
+        app:strokeWidth="2dp" />
 
 </LinearLayout>

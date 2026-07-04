@@ -3,79 +3,92 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black">
+    android:background="#F5F7FA">
 
-    <TextView
-        android:id="@+id/textViewTableNumber"
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/headerCard"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="12dp"
-        android:text="@string/table_number_placeholder"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="@color/white"
-        android:maxLines="1"
-        android:ellipsize="end"
+        android:layout_margin="16dp"
+        app:cardBackgroundColor="@android:color/white"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="3dp"
+        app:strokeColor="@color/primary"
+        app:strokeWidth="1dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/menuSwitchContainer" />
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <TextView
-        android:id="@+id/textViewMenuTitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="6dp"
-        android:layout_marginEnd="16dp"
-        android:text="@string/menu_food"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:textColor="@color/white"
-        android:maxLines="1"
-        android:ellipsize="end"
-        app:layout_constraintTop_toBottomOf="@id/textViewTableNumber"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/menuSwitchContainer" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="14dp">
 
-    <LinearLayout
-        android:id="@+id/menuSwitchContainer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginEnd="12dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/textViewTableNumber"
-        app:layout_constraintBottom_toBottomOf="@id/textViewTableNumber">
+            <TextView
+                android:id="@+id/textViewTableNumber"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/table_number_placeholder"
+                android:textColor="#212121"
+                android:textSize="22sp"
+                android:textStyle="bold" />
 
-        <Button
-            android:id="@+id/btnHrana"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:layout_marginEnd="8dp"
-            android:text="@string/menu_food"
-            android:textSize="12sp"
-            android:textColor="@color/black"
-            android:backgroundTint="@color/white" />
+            <TextView
+                android:id="@+id/textViewMenuTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="@string/menu_food"
+                android:textColor="#757575"
+                android:textSize="14sp" />
 
-        <Button
-            android:id="@+id/btnPica"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="@string/menu_drinks"
-            android:textSize="12sp"
-            android:textColor="@color/black"
-            android:backgroundTint="@color/white" />
-    </LinearLayout>
+            <LinearLayout
+                android:id="@+id/menuSwitchContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnHrana"
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/menu_food"
+                    android:textColor="@android:color/white"
+                    app:backgroundTint="@color/primary"
+                    app:cornerRadius="14dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPica"
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:text="@string/menu_drinks"
+                    android:textColor="@color/primary"
+                    app:backgroundTint="@android:color/white"
+                    app:cornerRadius="14dp"
+                    app:strokeColor="@color/primary"
+                    app:strokeWidth="1dp" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="12dp"
-        android:background="@color/black"
-        app:layout_constraintTop_toBottomOf="@id/textViewMenuTitle"
+        android:layout_marginTop="8dp"
+        android:background="#F5F7FA"
+        android:clipToPadding="false"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp"
+        app:layout_constraintTop_toBottomOf="@id/headerCard"
         app:layout_constraintBottom_toTopOf="@+id/containerTotalSelected"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -96,22 +109,26 @@
         android:id="@+id/containerTotalSelected"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:padding="8dp"
+        android:background="@android:color/white"
+        android:elevation="4dp"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="4dp"
         app:layout_constraintTop_toBottomOf="@id/recyclerView"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
         <TextView
             android:id="@+id/textViewTotalSelected"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="@string/selected_items_zero"
-            android:textSize="18sp"
+            android:textColor="#212121"
+            android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="@color/white"
-            android:gravity="start"
-            android:layout_marginStart="16dp"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/iconButtonContainer"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 
@@ -120,28 +137,39 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginEnd="8dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent">
 
-            <ImageButton
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAiChat"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:layout_marginEnd="8dp"
-                android:src="@drawable/ic_ai_chat"
-                android:background="@android:color/transparent"
-                android:contentDescription="@string/ai_chat" />
+                android:contentDescription="@string/ai_chat"
+                app:backgroundTint="@android:color/white"
+                app:cornerRadius="15dp"
+                app:icon="@drawable/ic_ai_chat"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconTint="@color/primary"
+                app:strokeColor="@color/primary"
+                app:strokeWidth="1dp" />
 
-            <ImageButton
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnMojeNarudzbe"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:src="@android:drawable/ic_menu_agenda"
-                android:background="@android:color/transparent"
                 android:contentDescription="Moje narudžbe"
-                android:visibility="gone" />
+                android:visibility="gone"
+                app:backgroundTint="@android:color/white"
+                app:cornerRadius="15dp"
+                app:icon="@android:drawable/ic_menu_agenda"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconTint="@color/primary"
+                app:strokeColor="@color/primary"
+                app:strokeWidth="1dp" />
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
@@ -150,68 +178,76 @@
         android:id="@+id/buttonContainer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:background="@android:color/white"
+        android:elevation="4dp"
         android:gravity="center"
-        android:padding="8dp"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="2dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
         app:layout_constraintTop_toBottomOf="@id/containerTotalSelected"
+        app:layout_constraintBottom_toTopOf="@id/tabLayoutTop"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/tabLayoutTop">
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPonistiNarudzbu"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_height="48dp"
             android:layout_marginEnd="8dp"
-            android:text="@string/cancel_order"
-            android:textSize="14sp"
-            android:textColor="@color/black"
-            android:backgroundTint="@color/white" />
+            android:layout_weight="1"
+            android:text="Poništi"
+            android:textColor="@color/danger"
+            app:backgroundTint="@android:color/white"
+            app:cornerRadius="15dp"
+            app:icon="@android:drawable/ic_menu_delete"
+            app:iconTint="@color/danger"
+            app:strokeColor="@color/danger"
+            app:strokeWidth="1dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnZavrsiNarudzbu"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_height="48dp"
             android:layout_marginStart="8dp"
+            android:layout_weight="1"
             android:text="@string/finish_order"
-            android:textSize="14sp"
-            android:backgroundTint="@color/white"
-            android:textColor="@color/black" />
+            android:textColor="@android:color/white"
+            app:backgroundTint="@color/primary"
+            app:cornerRadius="15dp" />
     </LinearLayout>
-
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayoutTop"
         android:layout_width="0dp"
         android:layout_height="55dp"
-        android:background="@color/white"
+        android:background="@android:color/white"
         app:tabMode="fixed"
         app:tabGravity="fill"
         app:tabMaxWidth="0dp"
         app:tabTextColor="@color/black"
         app:tabIndicatorHeight="0dp"
         app:tabRippleColor="@android:color/transparent"
-        app:tabBackground="@color/white"
+        app:tabBackground="@android:color/white"
         app:layout_constraintBottom_toTopOf="@id/tabLayoutBottom"
         app:layout_constraintStart_toStartOf="parent"
-
         app:layout_constraintEnd_toEndOf="parent" />
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayoutBottom"
         android:layout_width="0dp"
         android:layout_height="55dp"
-        android:background="@color/white"
+        android:background="@android:color/white"
         app:tabMode="fixed"
         app:tabGravity="fill"
         app:tabMaxWidth="0dp"
         app:tabTextColor="@color/black"
         app:tabIndicatorHeight="0dp"
         app:tabRippleColor="@android:color/transparent"
-        app:tabBackground="@color/white"
+        app:tabBackground="@android:color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

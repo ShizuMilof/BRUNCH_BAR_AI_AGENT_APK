@@ -4,70 +4,75 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="4dp">
+    app:cardCornerRadius="18dp"
+    app:cardElevation="3dp"
+    app:cardBackgroundColor="@android:color/white"
+    app:strokeColor="@color/primary"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="16dp"
-        android:gravity="center_vertical">
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <!-- LIJEVA STRANA (tekst) -->
+        <!-- Naziv artikla -->
+
         <TextView
             android:id="@+id/textViewNaziv"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:text="Pizza Capricciosa"
-            android:textSize="16sp"
+            android:textColor="#212121"
+            android:textSize="17sp"
             android:textStyle="bold"
-            android:textColor="#222222"
-            android:maxLines="10"
-            android:ellipsize="end" />
+            android:maxLines="8" />
 
-        <!-- DESNA STRANA (controls) -->
+        <!-- Donji red -->
+
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:layout_marginTop="14dp"
+            android:gravity="end|center_vertical"
+            android:orientation="horizontal">
 
-            <!-- Minus -->
-            <com.google.android.material.button.MaterialButton
+            <TextView
                 android:id="@+id/btnMinus"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_quantity_minus"
+                android:gravity="center"
                 android:text="-"
-                android:textSize="18sp"
-                android:textColor="#000000"
-                android:backgroundTint="#F0F0F0"
-                app:cornerRadius="14dp"
-                android:padding="0dp" />
+                android:textColor="@color/danger"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true" />
 
-            <!-- Kolicina -->
             <TextView
                 android:id="@+id/textViewKolicina"
-                android:layout_width="48dp"
+                android:layout_width="44dp"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:text="1"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#000000" />
-
-            <!-- Plus -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnPlus"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:text="+"
+                android:textColor="#212121"
                 android:textSize="18sp"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#000000"
-                app:cornerRadius="14dp"
-                android:padding="0dp" />
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnPlus"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_quantity_plus"
+                android:gravity="center"
+                android:text="+"
+                android:textColor="@color/primary"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:clickable="true"
+                android:focusable="true" />
+
         </LinearLayout>
 
     </LinearLayout>

@@ -32,8 +32,8 @@ public class ModifikacijeActivity extends AppCompatActivity {
     private TextView textViewKolicinaBroj;
     private TextView textViewOdaberiModifikacije;
     private RecyclerView recyclerViewModifikacije;
-    private Button btnMinus;
-    private Button btnPlus;
+    private TextView btnMinus;
+    private TextView btnPlus;
     private Button btnDodajUNarudzbu;
     private EditText editTextNapomena;
     private ImageView imageViewBackground;
@@ -117,9 +117,16 @@ public class ModifikacijeActivity extends AppCompatActivity {
             recyclerViewModifikacije.setVisibility(View.VISIBLE);
             textViewOdaberiModifikacije.setVisibility(View.VISIBLE);
             recyclerViewModifikacije.setLayoutManager(new LinearLayoutManager(this));
+            recyclerViewModifikacije.addItemDecoration(
+                    new androidx.recyclerview.widget.DividerItemDecoration(
+                            this,
+                            androidx.recyclerview.widget.DividerItemDecoration.VERTICAL
+                    )
+            );
             recyclerViewModifikacije.setAdapter(
                     new ModifikacijeAdapter(modifikacijeList, odabraneModifikacije)
             );
+
         }
 
         btnMinus.setOnClickListener(v -> smanjiKolicinu());

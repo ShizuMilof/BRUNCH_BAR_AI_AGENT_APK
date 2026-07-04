@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.lav_digitalizacija.R;
 import com.example.lav_digitalizacija.model.ChatMessage;
 import com.example.lav_digitalizacija.view.adapter.ChatAdapter;
+import com.google.android.material.button.MaterialButton;
 import com.google.common.reflect.TypeToken;
 import com.google.firebase.BuildConfig;
 import com.google.firebase.auth.FirebaseAuth;
@@ -51,8 +52,7 @@ public class ChatActivity extends AppCompatActivity {
 
     private RecyclerView rvChat;
     private EditText etMessage;
-    private Button btnSend;
-
+    private MaterialButton btnSend;
     private HorizontalScrollView actionsScroll;
     private LinearLayout layoutQuickActions;
 

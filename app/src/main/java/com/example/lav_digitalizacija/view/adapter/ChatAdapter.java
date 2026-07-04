@@ -1,5 +1,7 @@
 package com.example.lav_digitalizacija.view.adapter;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +20,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int TYPE_USER = 1;
     private static final int TYPE_BOT = 2;
 
+    TextView tvAvatar;
     private final List<ChatMessage> items;
 
     public ChatAdapter(List<ChatMessage> items) {
@@ -129,6 +132,14 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
+    private static String getNickname(Context context) {
+        SharedPreferences prefs =
+                context.getSharedPreferences("user_data", Context.MODE_PRIVATE);
+
+        return prefs.getString("nickname", "G");
+    }
+
+
     private String capitalize(String text) {
         if (text == null || text.isEmpty()) return text;
 
@@ -148,16 +159,29 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     static class UserVH extends RecyclerView.ViewHolder {
         TextView tvMessage;
+        TextView tvAvatar;
 
         UserVH(@NonNull View itemView) {
             super(itemView);
             tvMessage = itemView.findViewById(R.id.tvMessage);
+            tvAvatar = itemView.findViewById(R.id.tvAvatar);
         }
 
         void bind(String text) {
             tvMessage.setText(text);
+
+            if (tvAvatar != null) {
+                String nickname = getNickname(itemView.getContext());
+
+                if (nickname != null && !nickname.trim().isEmpty()) {
+                    tvAvatar.setText(String.valueOf(Character.toUpperCase(nickname.trim().charAt(0))));
+                } else {
+                    tvAvatar.setText("G");
+                }
+            }
         }
     }
+
 
     class BotVH extends RecyclerView.ViewHolder {
         TextView tvMessage;

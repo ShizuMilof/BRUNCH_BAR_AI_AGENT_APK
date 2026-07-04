@@ -1,43 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="320dp"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="24dp"
     android:background="@drawable/bg_dialog_rounded">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Dobrodošao"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        android:textColor="@color/black" />
+    <ImageView
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_gravity="center_horizontal"
+        android:src="@android:drawable/ic_menu_myplaces"
+        android:tint="@color/primary" />
 
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Kako da te zovemo?"
-        android:textSize="16sp"
-        android:textColor="@color/black"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="14dp"
+        android:gravity="center"
+        android:text="Dobrodošao!"
+        android:textColor="#212121"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:text="Kako želiš da te zovemo?"
+        android:textColor="#757575"
+        android:textSize="16sp" />
 
     <EditText
         android:id="@+id/etNickname"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Upiši ime"
-        android:layout_marginTop="16dp"
-        android:padding="12dp"
-        android:background="@drawable/bg_input_rounded" />
+        android:layout_height="52dp"
+        android:layout_marginTop="22dp"
+        android:background="@drawable/bg_chat_input_container"
+        android:hint="Unesi nadimak"
+        android:inputType="textCapWords"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:textColor="#212121"
+        android:textColorHint="#9E9E9E" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSaveNickname"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="52dp"
+        android:layout_marginTop="22dp"
         android:text="Nastavi"
-        android:layout_marginTop="20dp"
-        android:backgroundTint="@color/black"
-        android:textColor="@color/white" />
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:backgroundTint="@color/primary"
+        app:cornerRadius="16dp" />
 
 </LinearLayout>

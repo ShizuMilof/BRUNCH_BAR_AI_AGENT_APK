@@ -23,6 +23,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 
+
 public class KuhinjaActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;

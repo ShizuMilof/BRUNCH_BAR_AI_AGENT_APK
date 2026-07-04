@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/cardNarudzba"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
+    android:layout_marginBottom="14dp"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?android:attr/selectableItemBackground"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="6dp"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    app:cardBackgroundColor="@android:color/white"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="3dp"
+    app:strokeColor="@color/primary"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#1E1E1E"
         android:orientation="vertical"
         android:padding="16dp">
 
@@ -22,8 +24,8 @@
             android:id="@+id/txtNarudzbaId"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Narudzba_001"
-            android:textColor="@android:color/white"
+            android:text="Narudžba #001"
+            android:textColor="#212121"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -31,10 +33,11 @@
             android:id="@+id/txtStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="10dp"
             android:text="Status: Narudžba zaprimljena"
-            android:textColor="@android:color/white"
-            android:textSize="15sp" />
+            android:textColor="@color/primary"
+            android:textSize="15sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/txtVrijeme"
@@ -42,18 +45,25 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="Vrijeme: 2026-03-28 18:20:00"
-            android:textColor="@android:color/white"
+            android:textColor="#757575"
             android:textSize="14sp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="10dp"
+            android:background="#E0E0E0" />
 
         <TextView
             android:id="@+id/txtStavke"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
             android:text="• Pizza\n• Cola"
-            android:textColor="@android:color/white"
-            android:textSize="14sp" />
+            android:textColor="#212121"
+            android:textSize="14sp"
+            android:lineSpacingExtra="3dp" />
 
     </LinearLayout>
 
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>

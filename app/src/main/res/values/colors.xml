@@ -13,4 +13,16 @@
     <color name="colorBrown">#D27D2D</color>
     <color name="grey">#545456</color>
     <color name="blue">#0000FF</color>
+    <color name="danger">#E53935</color>
+    <color name="danger_dark">#B71C1C</color>
+    <color name="app_background">#121212</color>
+    <color name="app_background_odabir">#27754E35</color>
+    <color name="background_list">#F8FAFC</color>
+
+    <color name="surface">#1E1E1E</color>
+    <color name="surface_light">#2A2A2A</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#BDBDBD</color>
+
+    <color name="primary">#2E7D32</color>
 </resources>

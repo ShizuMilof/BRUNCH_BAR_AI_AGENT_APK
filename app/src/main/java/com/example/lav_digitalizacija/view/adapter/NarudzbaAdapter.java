@@ -9,7 +9,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.lav_digitalizacija.R;
-import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 
@@ -82,7 +81,7 @@ public class NarudzbaAdapter extends RecyclerView.Adapter<NarudzbaAdapter.ViewHo
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView textViewNaziv, textViewKolicina;
-        MaterialButton btnPlus, btnMinus;
+        TextView btnPlus, btnMinus;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);

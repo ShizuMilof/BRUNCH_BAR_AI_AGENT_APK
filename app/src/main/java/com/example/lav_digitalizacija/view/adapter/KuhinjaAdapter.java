@@ -43,42 +43,20 @@ public class KuhinjaAdapter extends RecyclerView.Adapter<KuhinjaAdapter.ViewHold
 
         holder.txtId.setText(n.getNarudzbaId());
         holder.txtStol.setText("Stol: " + n.getBrojStola());
+
         String status = n.getStatus();
-        holder.txtStatus.setText(status);
+        holder.txtStatus.setText(status != null ? status : "Status nije dostupan");
+        holder.txtStatus.setTextColor(Color.parseColor("#212121"));
 
-        if (status != null) {
-            switch (status) {
-                case "Narudžba zaprimljena":
-                    holder.txtStatus.setTextColor(Color.WHITE);
-                    break;
-
-                case "Krenulo u izradu":
-                    holder.txtStatus.setTextColor(Color.RED);
-                    break;
-
-                case "Priprema se":
-                    holder.txtStatus.setTextColor(android.graphics.Color.parseColor("#FFA500"));
-
-                    break;
-
-                case "Uskoro stiže na vaš stol":
-                    holder.txtStatus.setTextColor(Color.YELLOW);
-                    break;
-
-                case "Dostavljeno":
-                    holder.txtStatus.setTextColor(android.graphics.Color.GREEN);
-                    break;
-
-                default:
-                    holder.txtStatus.setTextColor(android.graphics.Color.WHITE);
-                    break;
-            }
-        }
         StringBuilder sb = new StringBuilder();
         for (String s : n.getStavke()) {
             sb.append("• ").append(s).append("\n");
         }
+
         holder.txtStavke.setText(sb.toString().trim());
+        holder.txtStavke.setTextColor(Color.parseColor("#212121"));
+        holder.txtId.setTextColor(Color.parseColor("#212121"));
+        holder.txtStol.setTextColor(Color.parseColor("#212121"));
 
         holder.card.setOnClickListener(v -> listener.onClick(n));
     }

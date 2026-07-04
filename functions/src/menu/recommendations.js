@@ -172,10 +172,10 @@ function buildFavoritesRecommendationsGrouped(
   grouped.pice = [...new Set(grouped.pice)];
 
   // limit po kategoriji
-  grouped.predjelo = grouped.predjelo.slice(0, 2);
-  grouped.glavno = grouped.glavno.slice(0, 2);
-  grouped.desert = grouped.desert.slice(0, 2);
-  grouped.pice = grouped.pice.slice(0, 2);
+grouped.predjelo = grouped.predjelo.slice(0, 1);
+grouped.glavno = grouped.glavno.slice(0, 1);
+grouped.desert = grouped.desert.slice(0, 1);
+grouped.pice = grouped.pice.slice(0, 1);
 
   return grouped;
 }

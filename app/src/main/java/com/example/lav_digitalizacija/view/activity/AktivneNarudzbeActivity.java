@@ -34,7 +34,6 @@ public class AktivneNarudzbeActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private TextView txtPrazno;
     private ImageButton btnBack;
-
     private DatabaseReference narudzbeRef;
     private ValueEventListener narudzbeListener;
 

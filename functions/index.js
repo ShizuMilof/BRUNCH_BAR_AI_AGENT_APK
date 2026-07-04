@@ -942,16 +942,22 @@ if (
 
 
 
-            const wantsRecommendationsFromHistory =
-                normalizedMealAnswer.includes("proslim narudzbama") ||
-                normalizedMealAnswer.includes("prošlim narudžbama") ||
-                normalizedMealAnswer.includes("prema proslim") ||
-                normalizedMealAnswer.includes("prema prošlim") ||
-                normalizedMealAnswer.includes("po proslim") ||
-                normalizedMealAnswer.includes("po prošlim") ||
-                normalizedMealAnswer.includes("mojim narudzbama") ||
-                normalizedMealAnswer.includes("mojim narudžbama") ||
-                normalizedMealAnswer.includes("po mom ukusu");
+          const wantsRecommendationsFromHistory =
+              normalizedMealAnswer.includes("proslim narudzbama") ||
+              normalizedMealAnswer.includes("prošlim narudžbama") ||
+              normalizedMealAnswer.includes("prethodnim narudzbama") ||
+              normalizedMealAnswer.includes("prethodnim narudžbama") ||
+              normalizedMealAnswer.includes("prethodne narudzbe") ||
+              normalizedMealAnswer.includes("prethodne narudžbe") ||
+              normalizedMealAnswer.includes("prema proslim") ||
+              normalizedMealAnswer.includes("prema prošlim") ||
+              normalizedMealAnswer.includes("prema prethodnim") ||
+              normalizedMealAnswer.includes("po proslim") ||
+              normalizedMealAnswer.includes("po prošlim") ||
+              normalizedMealAnswer.includes("po prethodnim") ||
+              normalizedMealAnswer.includes("mojim narudzbama") ||
+              normalizedMealAnswer.includes("mojim narudžbama") ||
+              normalizedMealAnswer.includes("po mom ukusu");
 
             if (message && !action && wantsRecommendationsFromHistory) {
                 const grouped = buildFavoritesRecommendationsGrouped(
@@ -964,35 +970,27 @@ if (
                 const sections = [];
 
                 if (grouped.predjelo.length) {
-                    sections.push(
-                        `Od predjela ti predlažem:\n${grouped.predjelo.map((i) => `- ${i}`).join("\n")}`,
-                    );
+                    sections.push(`Od predjela ti predlažem:\n- ${grouped.predjelo[0]}`);
                 }
 
                 if (grouped.glavno.length) {
-                    sections.push(
-                        `Od glavnog jela ti predlažem:\n${grouped.glavno.map((i) => `- ${i}`).join("\n")}`,
-                    );
+                    sections.push(`Od glavnog jela ti predlažem:\n- ${grouped.glavno[0]}`);
                 }
 
                 if (grouped.desert.length) {
-                    sections.push(
-                        `Od deserta ti predlažem:\n${grouped.desert.map((i) => `- ${i}`).join("\n")}`,
-                    );
+                    sections.push(`Od deserta ti predlažem:\n- ${grouped.desert[0]}`);
                 }
 
                 if (grouped.pice.length) {
-                    sections.push(
-                        `Od pića ti predlažem:\n${grouped.pice.map((i) => `- ${i}`).join("\n")}`,
-                    );
+                    sections.push(`Od pića ti predlažem:\n- ${grouped.pice[0]}`);
                 }
 
                 const suggestedItems = [
-                    ...grouped.predjelo,
-                    ...grouped.glavno,
-                    ...grouped.desert,
-                    ...grouped.pice,
-                ];
+                    grouped.predjelo[0],
+                    grouped.glavno[0],
+                    grouped.desert[0],
+                    grouped.pice[0],
+                ].filter(Boolean);
 
               return buildResponse(
                   "personal_recommendations",
@@ -1392,6 +1390,10 @@ if (
               normalizedForParser.includes(" i ")
           );
 
+
+        console.log("BEFORE PARSER CHECK:", message);
+        console.log("SHOULD TRY PARSER:", shouldTryOrderParser);
+        console.log("NORMALIZED FOR PARSER:", normalizedForParser);
        if (shouldTryOrderParser) {
            const parsedOrder = await parseOrderFromMessage({
                apiKey: openAiKey,
@@ -1445,6 +1447,11 @@ if (
             message,
             foods,
             drinks,
+        );
+
+        console.log(
+            "EXACT ITEM FLOW:",
+            exactMenuItem ? exactMenuItem.name : null
         );
 
       if (

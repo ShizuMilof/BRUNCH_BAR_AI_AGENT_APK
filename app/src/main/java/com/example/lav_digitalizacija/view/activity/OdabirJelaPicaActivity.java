@@ -6,13 +6,12 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -20,6 +19,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.lav_digitalizacija.R;
 import com.example.lav_digitalizacija.model.MenuItem;
 import com.example.lav_digitalizacija.view.adapter.MenuItemAdapter;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
@@ -46,16 +47,17 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
     private TextView textViewMenuTitle;
 
     private TabLayout tabLayoutTop;
-    private ImageButton btnMojeNarudzbe;
     private TabLayout tabLayoutBottom;
     private ProgressBar progressBar;
 
-    private Button btnHrana;
-    private Button btnPica;
-    private Button btnZavrsiNarudzbu;
-    private Button btnPonistiNarudzbu;
 
-    private ImageButton btnAiChat;
+    private MaterialButton btnHrana;
+    private MaterialButton btnPica;
+    private MaterialButton btnZavrsiNarudzbu;
+    private MaterialButton btnPonistiNarudzbu;
+
+    private MaterialButton btnAiChat;
+    private MaterialButton btnMojeNarudzbe;
 
     private long lastClickTime = 0;
 
@@ -97,6 +99,7 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
         setupTabs();
         ponistiNarudzbu();
         ucitajMeni();
+        osvjeziGumbeMenija();
     }
 
     @Override
@@ -104,6 +107,62 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
         super.onResume();
         provjeriAktivneNarudzbeZaStol();
         osvjeziBrojOdabranihArtikala();
+    }
+
+    private void prikaziDialogZaPonistavanjeNarudzbe() {
+        AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+                .setTitle("Poništiti narudžbu?")
+                .setMessage("Jeste li sigurni da želite poništiti narudžbu? Svi odabrani artikli bit će obrisani.")
+                .setNegativeButton("Odustani", (d, which) -> d.dismiss())
+                .setPositiveButton("Poništi", (d, which) -> {
+                    ponistiNarudzbu();
+                    Toast.makeText(this, "Narudžba je poništena.", Toast.LENGTH_SHORT).show();
+                })
+                .show();
+
+        TextView title = dialog.findViewById(com.google.android.material.R.id.alertTitle);
+        if (title != null) {
+            title.setTextColor(getColor(R.color.black));
+        }
+
+        TextView message = dialog.findViewById(android.R.id.message);
+        if (message != null) {
+            message.setTextColor(getColor(R.color.black));
+        }
+
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                .setTextColor(getColor(R.color.danger));
+
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+                .setTextColor(getColor(R.color.primary));
+    }
+
+    private void osvjeziStanjeGumbaPonisti() {
+        SharedPreferences preferences = getSharedPreferences("narudzba", Context.MODE_PRIVATE);
+        int totalSelected = preferences.getInt("total_selected", 0);
+
+        boolean imaArtikala = totalSelected > 0;
+
+        btnPonistiNarudzbu.setEnabled(imaArtikala);
+        btnPonistiNarudzbu.setAlpha(imaArtikala ? 1f : 0.4f);
+    }
+
+    private void osvjeziGumbeMenija() {
+        if ("hrana".equals(aktivniMeni)) {
+            btnHrana.setBackgroundTintList(getColorStateList(R.color.primary));
+            btnHrana.setTextColor(getColor(R.color.white));
+
+            btnPica.setBackgroundTintList(getColorStateList(R.color.surface));
+            btnPica.setTextColor(getColor(R.color.primary));
+            btnPica.setStrokeColorResource(R.color.primary);
+        } else {
+            btnPica.setBackgroundTintList(getColorStateList(R.color.primary));
+            btnPica.setTextColor(getColor(R.color.white));
+
+            btnHrana.setBackgroundTintList(getColorStateList(R.color.surface));
+            btnHrana.setTextColor(getColor(R.color.primary));
+            btnHrana.setStrokeColorResource(R.color.primary);
+        }
     }
 
     private void initViews() {
@@ -176,13 +235,14 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
     private void setupButtons() {
         btnHrana.setOnClickListener(v -> {
             aktivniMeni = "hrana";
-
+            osvjeziGumbeMenija();
             osvjeziNaslovMenija();
             ucitajMeni();
         });
 
         btnPica.setOnClickListener(v -> {
             aktivniMeni = "pica";
+            osvjeziGumbeMenija();
             osvjeziNaslovMenija();
             ucitajMeni();
         });
@@ -214,7 +274,7 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
         });
 
         btnZavrsiNarudzbu.setOnClickListener(v -> prikaziOdabraneArtikle());
-        btnPonistiNarudzbu.setOnClickListener(v -> ponistiNarudzbu());
+        btnPonistiNarudzbu.setOnClickListener(v -> prikaziDialogZaPonistavanjeNarudzbe());
     }
 
     private void setupTabs() {
@@ -277,7 +337,9 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
     private void osvjeziBrojOdabranihArtikala() {
         SharedPreferences preferences = getSharedPreferences("narudzba", Context.MODE_PRIVATE);
         int totalSelected = preferences.getInt("total_selected", 0);
+
         mTextViewTotalSelected.setText(getString(R.string.selected_items_count, totalSelected));
+        osvjeziStanjeGumbaPonisti();
     }
 
     private void postaviTaboveIzKategorija() {
@@ -424,6 +486,7 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
 
         mTextViewTotalSelected.setText(getString(R.string.selected_items_count, 0));
         mAdapter.notifyDataSetChanged();
+        osvjeziStanjeGumbaPonisti();
     }
 
     private String dohvatiNickname() {
@@ -484,6 +547,7 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
                 editor.apply();
 
                 mTextViewTotalSelected.setText(getString(R.string.selected_items_count, totalSelected));
+                osvjeziStanjeGumbaPonisti();
             }
         } else if (requestCode == 2 && resultCode == RESULT_OK) {
             if (data != null && data.hasExtra("totalSelected")) {
@@ -492,6 +556,7 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
                 editor.apply();
 
                 mTextViewTotalSelected.setText(getString(R.string.selected_items_count, totalSelected));
+                osvjeziStanjeGumbaPonisti();
             }
         } else if (requestCode == 3 && resultCode == RESULT_OK) {
             if (data != null && data.hasExtra("novaKolicina")) {
@@ -500,6 +565,7 @@ public class OdabirJelaPicaActivity extends AppCompatActivity {
                 editor.apply();
 
                 mTextViewTotalSelected.setText(getString(R.string.selected_items_count, novaKolicina));
+                osvjeziStanjeGumbaPonisti();
             }
         }
     }

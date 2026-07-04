@@ -2,7 +2,9 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0F0F0F">
+    android:background="#F5F7FA">
+
+    <!-- SUCCESS -->
 
     <LinearLayout
         android:id="@+id/successContainer"
@@ -15,8 +17,7 @@
 
         <FrameLayout
             android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:layout_gravity="center_horizontal">
+            android:layout_height="120dp">
 
             <ImageView
                 android:id="@+id/imageSuccessCircle"
@@ -39,27 +40,28 @@
             android:id="@+id/textSuccess"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="26dp"
             android:alpha="0"
             android:gravity="center"
             android:text="@string/qr_welcome_preview"
-            android:textColor="#FFFFFF"
-            android:textSize="26sp"
+            android:textColor="#212121"
+            android:textSize="28sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/textContinue"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="10dp"
             android:alpha="0"
             android:gravity="center"
             android:text="@string/qr_continue"
-            android:textColor="#A3A3A3"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:textColor="#757575"
+            android:textSize="17sp" />
 
     </LinearLayout>
+
+    <!-- ERROR -->
 
     <LinearLayout
         android:id="@+id/errorContainer"
@@ -72,8 +74,7 @@
 
         <FrameLayout
             android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:layout_gravity="center_horizontal">
+            android:layout_height="120dp">
 
             <ImageView
                 android:id="@+id/imageErrorCircle"
@@ -96,24 +97,25 @@
             android:id="@+id/textError"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="26dp"
             android:alpha="0"
             android:gravity="center"
             android:text="@string/qr_invalid"
-            android:textColor="#FFFFFF"
-            android:textSize="24sp"
+            android:textColor="#212121"
+            android:textSize="28sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/textRetry"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="10dp"
             android:alpha="0"
             android:gravity="center"
             android:text="@string/qr_retry"
-            android:textColor="#A3A3A3"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:textColor="#757575"
+            android:textSize="17sp" />
+
     </LinearLayout>
+
 </FrameLayout>
