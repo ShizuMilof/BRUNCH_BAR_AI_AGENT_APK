@@ -1,4 +1,4 @@
-RAZVOJ MOBILNE APLIKACIJE ZA NARUČIVANJE U RESTORANU UZ AI ASISTENTA
+**********RAZVOJ MOBILNE APLIKACIJE ZA NARUČIVANJE U RESTORANU UZ AI ASISTENTA**********
 
 Diplomski rad
 
@@ -6,9 +6,9 @@ Autor: Martin Čikor
 Mentor: izv. prof. dr. sc. Nikola Tanković
 Komentor: dr. sc. Robert Šajina
 
-Sveučilište Jurja Dobrile u Puli, Fakultet informatike
+**Sveučilište Jurja Dobrile u Puli, Fakultet informatike**
 
-Sažetak
+**Sažetak**
 
 Cilj ovog diplomskog rada bio je razviti mobilnu aplikaciju koja gostima restorana omogućuje jednostavnije i brže naručivanje hrane i pića putem mobilnog uređaja. Aplikacija je namijenjena korištenju unutar restorana, pri čemu gost skeniranjem QR koda povezanog sa stolom dobiva pristup digitalnom jelovniku i mogućnosti izrade narudžbe.
 
@@ -16,21 +16,21 @@ Korisnik može pregledavati dostupna jela i pića, odabrati željene proizvode, 
 
 Uz osnovne funkcionalnosti naručivanja implementiran je i AI asistent koji korisniku omogućuje komunikaciju prirodnim jezikom. Putem razgovora korisnik može zatražiti informacije o jelovniku, preporuke hrane i pića, pregledavati košaricu te dodavati proizvode u narudžbu. AI model služi za razumijevanje korisničkog zahtjeva, dok se provjera podataka i izvršavanje akcija provode na poslužiteljskoj strani kako bi se spriječilo dodavanje nepostojećih proizvoda ili izvršavanje neispravnih akcija.
 
-Funkcionalnosti
+**Funkcionalnosti**
 
-Prijava korisnika:
+**Prijava korisnika:**
 
 anonimna autentifikacija putem Firebase Authenticationa
 unos nadimka korisnika
 pamćenje korisnika između pokretanja aplikacije
 
-QR kod i odabir stola:
+**QR kod i odabir stola:**
 
 skeniranje QR koda pomoću kamere mobilnog uređaja
 provjera ispravnosti QR koda
 povezivanje korisnika s odgovarajućim stolom u restoranu
 
-Digitalni jelovnik:
+**Digitalni jelovnik:**
 
 dohvaćanje aktualnog jelovnika iz Firebase Realtime Database
 pregled dostupne hrane i pića
@@ -38,14 +38,14 @@ odabir proizvoda
 određivanje količine proizvoda
 dodavanje modifikacija i napomena uz proizvod
 
-Košarica i naručivanje:
+**Košarica i naručivanje:**
 
 pregled odabranih proizvoda
 izmjena i uklanjanje proizvoda iz košarice
 slanje narudžbe osoblju restorana
 pohrana narudžbe u Firebase Realtime Database
 
-AI asistent:
+**AI asistent:**
 
 komunikacija s korisnikom prirodnim jezikom
 odgovaranje na pitanja o jelovniku
@@ -56,7 +56,7 @@ prikaz sadržaja košarice
 korištenje prethodnih poruka kao konteksta razgovora
 provjera AI akcija na poslužiteljskoj strani
 
-Osoblje restorana:
+**Osoblje restorana:**
 
 pregled zaprimljenih narudžbi
 praćenje statusa narudžbi
@@ -72,7 +72,7 @@ OpenAI API
 GPT-5 mini
 Pokretanje aplikacije
 
-Za pokretanje projekta potrebno je:
+**Za pokretanje projekta potrebno je:**
 
 Klonirati repozitorij.
 Otvoriti projekt u Android Studiju.
@@ -83,12 +83,12 @@ Pokrenuti aplikaciju na Android uređaju ili emulatoru.
 
 Za korištenje funkcionalnosti naručivanja potreban je valjani QR kod stola u formatu koji aplikacija očekuje.
 
-Demo
+**Demo**
 
 Za demonstraciju aplikacije potrebno je pokrenuti Android aplikaciju te skenirati valjani QR kod stola. (slike se nalaze u repozitoriju)
 
 Korisnik nakon skeniranja QR koda može pregledavati jelovnik, dodavati proizvode u košaricu, prilagođavati narudžbu te koristiti AI asistenta za komunikaciju i upravljanje narudžbom.
 
-Dokumentacija
+**Dokumentacija**
 
 Detaljan opis arhitekture sustava, implementacije aplikacije, korištenih tehnologija, AI asistenta te provedeno testiranje dostupni su u priloženom diplomskom radu.
