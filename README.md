@@ -3,7 +3,9 @@
 Diplomski rad
 
 Autor: Martin Čikor
+
 Mentor: izv. prof. dr. sc. Nikola Tanković
+
 Komentor: dr. sc. Robert Šajina
 
 **Sveučilište Jurja Dobrile u Puli, Fakultet informatike**
