@@ -76,14 +76,21 @@ Pokretanje aplikacije
 
 **Za pokretanje projekta potrebno je:**
 
-Klonirati repozitorij.
-Otvoriti projekt u Android Studiju.
-Povezati projekt s odgovarajućim Firebase projektom.
-Dodati potrebnu Firebase konfiguraciju.
-Konfigurirati i pokrenuti Firebase Functions za poslužiteljski dio AI asistenta.
-Pokrenuti aplikaciju na Android uređaju ili emulatoru.
+1. Klonirati repozitorij.
 
-Za korištenje funkcionalnosti naručivanja potreban je valjani QR kod stola u formatu koji aplikacija očekuje.
+2. Otvoriti projekt u Android Studiju.
+
+3. Povezati projekt s odgovarajućim Firebase projektom.
+
+4. Dodati potrebnu Firebase konfiguraciju.
+
+5. Konfigurirati i pokrenuti Firebase Functions za poslužiteljski dio AI asistenta.
+
+6. Pokrenuti aplikaciju na Android uređaju ili emulatoru.
+
+7. Za korištenje funkcionalnosti naručivanja potreban je valjani QR kod stola u formatu koji aplikacija očekuje.
+
+**stavke pod brojem 3,4,5 su odrađene u sklopu ovog repozitorija**
 
 **Demo**
 
